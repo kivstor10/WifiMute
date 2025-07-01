@@ -1,39 +1,63 @@
 import { useEffect, useState } from "react";
 import type { Schema } from "../amplify/data/resource";
 import { generateClient } from "aws-amplify/data";
+import Navbar from "./Navbar";
 
 const client = generateClient<Schema>();
 
 function App() {
-  const [todos, setTodos] = useState<Array<Schema["Todo"]["type"]>>([]);
+  const [devices, setDevices] = useState<Array<Schema["Device"]["type"]>>([]);
 
   useEffect(() => {
-    client.models.Todo.observeQuery().subscribe({
-      next: (data) => setTodos([...data.items]),
+    client.models.Device.observeQuery().subscribe({
+      next: (data) => setDevices([...data.items]),
     });
   }, []);
 
-  function createTodo() {
-    client.models.Todo.create({ content: window.prompt("Todo content") });
+  function createDevice() {
+    const staticIp = window.prompt("Device static IP?");
+    const wifiMac = window.prompt("Device WiFi MAC address?");
+    const blockStatus = window.prompt("Block status (ON/OFF)?", "OFF");
+    if (!staticIp || !wifiMac || !blockStatus) return;
+    client.models.Device.create({ staticIp, wifiMac, blockStatus });
+  }
+
+  function toggleBlockStatus(device: Schema["Device"]["type"]) {
+    client.models.Device.update({
+      id: device.id,
+      blockStatus: device.blockStatus === "ON" ? "OFF" : "ON",
+    });
   }
 
   return (
-    <main>
-      <h1>My todos</h1>
-      <button onClick={createTodo}>+ new</button>
-      <ul>
-        {todos.map((todo) => (
-          <li key={todo.id}>{todo.content}</li>
-        ))}
-      </ul>
-      <div>
-        🥳 App successfully hosted. Try creating a new todo.
-        <br />
-        <a href="https://docs.amplify.aws/react/start/quickstart/#make-frontend-updates">
-          Review next step of this tutorial.
-        </a>
-      </div>
-    </main>
+    <>
+      <Navbar />
+      <main>
+        <h1>My Devices</h1>
+        <button onClick={createDevice}>+ new device</button>
+        <ul>
+          {devices.map((device) => (
+            <li key={device.id}>
+              <strong>IP:</strong> {device.staticIp} | <strong>MAC:</strong>{" "}
+              {device.wifiMac} | <strong>Blocked:</strong> {device.blockStatus}
+              <button
+                style={{ marginLeft: 8 }}
+                onClick={() => toggleBlockStatus(device)}
+              >
+                Toggle Block
+              </button>
+            </li>
+          ))}
+        </ul>
+        <div>
+          🥳 App successfully hosted. Try adding a new device.
+          <br />
+          <a href="https://docs.amplify.aws/react/start/quickstart/#make-frontend-updates">
+            Review next step of this tutorial.
+          </a>
+        </div>
+      </main>
+    </>
   );
 }
 
