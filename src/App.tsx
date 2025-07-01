@@ -2,11 +2,13 @@ import { useEffect, useState } from "react";
 import type { Schema } from "../amplify/data/resource";
 import { generateClient } from "aws-amplify/data";
 import Navbar from "./Navbar";
+import DeviceFormDialog from "./DeviceFormDialog";
 
 const client = generateClient<Schema>();
 
 function App() {
   const [devices, setDevices] = useState<Array<Schema["Device"]["type"]>>([]);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
     client.models.Device.observeQuery().subscribe({
@@ -14,18 +16,16 @@ function App() {
     });
   }, []);
 
-  function createDevice() {
-    const staticIp = window.prompt("Device static IP?");
-    const wifiMac = window.prompt("Device WiFi MAC address?");
-    let blockStatus = window.prompt("Block status (ON/OFF)?", "OFF");
-    if (!staticIp || !wifiMac || !blockStatus) return;
-    blockStatus = blockStatus.toUpperCase();
-    if (blockStatus !== "ON" && blockStatus !== "OFF") {
-      alert('Block status must be "ON" or "OFF".');
-      return;
+  function handleAddDevice(data: {
+      staticIp: string;
+      wifiMac: string;
+      name: string;
+    }) {
+      client.models.Device.create({
+        ...data,
+        blockStatus: "OFF",
+      });
     }
-    client.models.Device.create({ staticIp, wifiMac, blockStatus: blockStatus as "ON" | "OFF" });
-  }
 
   function toggleBlockStatus(device: Schema["Device"]["type"]) {
     client.models.Device.update({
@@ -39,7 +39,12 @@ function App() {
       <Navbar />
       <main>
         <h1>My Devices</h1>
-        <button onClick={createDevice}>+ new device</button>
+        <button onClick={() => setDialogOpen(true)}>+ new device</button>
+        <DeviceFormDialog
+          open={dialogOpen}
+          onClose={() => setDialogOpen(false)}
+          onSubmit={handleAddDevice}
+        />
         <ul>
           {devices.map((device) => (
             <li key={device.id}>
@@ -54,13 +59,6 @@ function App() {
             </li>
           ))}
         </ul>
-        <div>
-          🥳 App successfully hosted. Try adding a new device.
-          <br />
-          <a href="https://docs.amplify.aws/react/start/quickstart/#make-frontend-updates">
-            Review next step of this tutorial.
-          </a>
-        </div>
       </main>
     </>
   );

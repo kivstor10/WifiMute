@@ -9,6 +9,7 @@ specifies that any user authenticated via an API key can "create", "read",
 const schema = a.schema({
   Device: a
     .model({
+      name: a.string(),
       staticIp: a.string(),
       wifiMac: a.string(),
       blockStatus: a.enum(["ON", "OFF"]),
