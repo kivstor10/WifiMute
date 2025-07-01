@@ -1,9 +1,29 @@
 version: 1
 backend:
   phases:
+    install:
+      runtime-versions:
+        nodejs: 22 # Keep this, it's the standard way, but we'll also use nvm for robustness
+      commands:
+        # Explicitly install and use Node.js 22 early in the install phase
+        - nvm install 22 # Install Node.js 22 if not already there
+        - nvm use 22     # Switch to Node.js 22
+        - node -v        # Add this for debugging - it will print the active Node.js version
+        - npm -v         # Also check npm version
+        
+        # Now run npm ci, knowing Node.js 22 is active
+        - npm ci --cache .npm --prefer-offline 
+
     build:
       commands:
-        - npm ci --cache .npm --prefer-offline
+        # The Node.js version should now be 22 from the install phase.
+        # Verify it again if you want more debug info.
+        # - node -v 
+
+        # Keep the global installation of Amplify backend CLI
+        - npm install -g @aws-amplify/backend-cli@latest 
+
+        # Run the deployment command
         - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
 frontend:
   phases:
