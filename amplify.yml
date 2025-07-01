@@ -3,43 +3,51 @@ backend:
   phases:
     install:
       runtime-versions:
-        nodejs: 22 # Keep this, it's the declarative way Amplify *should* handle it.
+        nodejs: 22
       commands:
-        # 1. Add echo statements to explicitly show progress
-        - echo "--- Starting Backend Install Phase ---"
-        - echo "Attempting to install and use Node.js 22 with nvm..."
+        - echo "--- BEGINNING OF INSTALL PHASE COMMANDS ---"
 
-        # 2. Force nvm to install and use Node.js 22
-        #    Use `source $NVM_DIR/nvm.sh` to ensure nvm commands are available in the current shell
-        #    This is often needed in non-interactive shell environments like build scripts.
-        - |- # This pipe symbol allows multiline command blocks, ensuring all lines execute in one go
+        # Explicitly clear Node.js cache and node_modules to ensure a fresh install
+        # This will make builds slower initially but helps diagnose cache issues.
+        - rm -rf .npm
+        - rm -rf node_modules
+        - echo "Cleaned up .npm and node_modules"
+
+        # Ensure nvm is sourced and available
+        - |
+          # Check common NVM paths and source it
           if [ -s "$NVM_DIR/nvm.sh" ]; then
             . "$NVM_DIR/nvm.sh"
-          elif [ -s "/usr/local/nvm/nvm.sh" ]; then # Common path for nvm in Amplify/CodeBuild
+          elif [ -s "/usr/local/nvm/nvm.sh" ]; then
             . "/usr/local/nvm/nvm.sh"
           fi
-          nvm install 22 || echo "nvm install 22 failed, continuing anyway..." # Install (or verify installed)
-          nvm use 22 || echo "nvm use 22 failed, continuing anyway..."         # Use Node 22
-          node -v # VERIFY NODE VERSION
-          npm -v  # VERIFY NPM VERSION
-          echo "--- Node.js version check complete ---"
+          echo "NVM sourced."
 
-        # 3. Now run npm ci, which should use Node.js 22
+        # Install and use Node.js 22
+        - nvm install 22 || echo "nvm install 22 command failed, check nvm setup."
+        - nvm use 22 || echo "nvm use 22 command failed, check nvm setup."
+        - node -v # VERIFY NODE VERSION HERE
+        - npm -v  # VERIFY NPM VERSION HERE
+        - echo "Node.js version check complete in install phase."
+
+        # Now run npm ci, knowing Node.js 22 is active
         - npm ci --cache .npm --prefer-offline 
+        - echo "npm ci completed in install phase."
 
-        - echo "--- Backend Install Phase Complete ---"
+        # Install Amplify backend CLI globally right after npm ci
+        - npm install -g @aws-amplify/backend-cli@latest 
+        - echo "Amplify backend CLI installed in install phase."
 
+        - echo "--- END OF INSTALL PHASE COMMANDS ---"
+    
+    # Remove the 'build' phase for this debugging step to force all commands into 'install'
     build:
       commands:
-        # The Node.js version should now be 22 from the install phase.
-        # You can add node -v here again for double-checking if needed.
-        # - node -v 
-
-        # Keep the global installation of Amplify backend CLI
-        - npm install -g @aws-amplify/backend-cli@latest 
-
-        # Run the deployment command
+        # Move the deploy command here as the final step.
+        # All setup should be done by now.
         - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
+        - echo "Amplify deployment command executed."
+
 frontend:
   phases:
     build:
