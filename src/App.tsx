@@ -17,9 +17,14 @@ function App() {
   function createDevice() {
     const staticIp = window.prompt("Device static IP?");
     const wifiMac = window.prompt("Device WiFi MAC address?");
-    const blockStatus = window.prompt("Block status (ON/OFF)?", "OFF");
+    let blockStatus = window.prompt("Block status (ON/OFF)?", "OFF");
     if (!staticIp || !wifiMac || !blockStatus) return;
-    client.models.Device.create({ staticIp, wifiMac, blockStatus });
+    blockStatus = blockStatus.toUpperCase();
+    if (blockStatus !== "ON" && blockStatus !== "OFF") {
+      alert('Block status must be "ON" or "OFF".');
+      return;
+    }
+    client.models.Device.create({ staticIp, wifiMac, blockStatus: blockStatus as "ON" | "OFF" });
   }
 
   function toggleBlockStatus(device: Schema["Device"]["type"]) {
