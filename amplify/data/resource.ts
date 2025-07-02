@@ -13,6 +13,8 @@ const schema = a.schema({
       staticIp: a.string(),
       wifiMac: a.string(),
       blockStatus: a.enum(["ON", "OFF"]),
+      scheduleFrom: a.integer(), // minutes since midnight
+      scheduleTo: a.integer(),   // minutes since midnight
     })
     .authorization((allow) => [allow.publicApiKey()]),
 });

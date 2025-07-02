@@ -46,7 +46,7 @@ nav{
   flex-direction: row;  
 }
 
-ul {
+main > ul {
   padding-inline-start: 0;
   margin-block-start: 0;
   margin-block-end: 0;
@@ -59,7 +59,7 @@ ul {
   max-width: 600px;
 }
 
-li {
+main > ul > li {
   background-color: white;
   padding: 8px;
   margin: 10px 5px;
