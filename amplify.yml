@@ -3,45 +3,27 @@ backend:
   phases:
     install:
       runtime-versions:
-        nodejs: 22 # Declare Node.js 22 as the desired runtime version
+        nodejs: 22
       commands:
         - echo "--- BEGINNING OF BACKEND INSTALL PHASE COMMANDS ---"
-        
-        # Explicitly clear Node.js cache and node_modules to ensure a fresh install
-        # This helps in preventing stale cache issues.
-        - rm -rf .npm
-        - rm -rf node_modules
-        - echo "Cleaned up .npm and node_modules for backend install."
+        - echo "Initial node version check:"
+        - node -v # Check here
+        - which node # Check here
 
-        # Ensure nvm is sourced and available in the shell
-        # This is crucial for nvm commands to work correctly in non-interactive environments.
-        - |
-          if [ -s "$NVM_DIR/nvm.sh" ]; then
-            . "$NVM_DIR/nvm.sh"
-          elif [ -s "/usr/local/nvm/nvm.sh" ]; then # Common fallback path for nvm in Amplify/CodeBuild
-            . "/usr/local/nvm/nvm.sh"
-          fi
-          echo "NVM sourced."
+        # ... (your existing commands) ...
 
-        # Install and use Node.js 22 explicitly with nvm
-        - nvm install 22 || echo "nvm install 22 command failed, check nvm setup. Continuing anyway..."
-        - nvm use 22 || echo "nvm use 22 command failed, check nvm setup. Continuing anyway..."
+        - echo "Node.js version after nvm use 22:"
         - node -v # VERIFY: This should print v22.x.x
-        - npm -v  # VERIFY: This should print npm version compatible with Node 22
-        - echo "Node.js version check complete in backend install phase."
+        - which node # VERIFY: This should show the nvm path for node 22
+        - npm -v
 
-        # Install backend project dependencies
-        - npm ci --cache .npm --prefer-offline 
-        - echo "Backend npm ci completed."
-
-        # Install the latest Amplify backend CLI globally to ensure CDK compatibility
-        - npm install -g @aws-amplify/backend-cli@latest 
-        - echo "Amplify backend CLI installed in backend install phase."
-        - echo "--- END OF BACKEND INSTALL PHASE COMMANDS ---"
+        # ... (rest of your backend install phase) ...
 
     build:
       commands:
-        # Execute the Amplify pipeline deployment command
+        - echo "Node.js version at beginning of backend build phase:"
+        - node -v # Check here
+        - which node # Check here
         - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
         - echo "Amplify backend deployment command executed."
 
@@ -50,20 +32,20 @@ frontend:
     build:
       commands:
         - echo "--- BEGINNING OF FRONTEND BUILD PHASE COMMANDS ---"
-        # Install frontend project dependencies
-        # This is placed here because the separate 'frontend: install' phase was being skipped.
+        - echo "Node.js version at beginning of frontend build phase:"
+        - node -v # Check here
+        - which node # Check here
         - npm ci --cache .npm --prefer-offline
         - echo "Frontend npm ci completed within build phase."
-        
-        # Execute the frontend build command (e.g., tsc && vite build)
+
         - npm run build
         - echo "Frontend build command executed."
         - echo "--- END OF FRONTEND BUILD PHASE COMMANDS ---"
-  artifacts:
-    baseDirectory: dist
-    files:
-      - '**/*'
-  cache:
-    paths:
-      - .npm/**/*
-      - node_modules/**/*
+artifacts:
+  baseDirectory: dist
+  files:
+    - '**/*'
+cache:
+  paths:
+    - .npm/**/*
+    - node_modules/**/*
