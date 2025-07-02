@@ -15,7 +15,6 @@ backend:
         - node -v
         - which node
 
-        # It seems .npm and node_modules cleanup is already in place. Keep it.
         - rm -rf .npm
         - rm -rf node_modules
         - echo "Cleaned up .npm and node_modules for backend install."
@@ -40,26 +39,35 @@ backend:
         - which node # Should now point to the NVM Node 22 path
 
         # --- NEW STEPS FOR NPM GLOBAL INSTALL CLEANLINESS ---
-        # 1. Clear npm cache explicitly (sometimes holds old global install info)
         - npm cache clean --force
         - echo "npm cache cleaned."
 
-        # 2. Delete the problematic global amplify executable IF it exists in the Node 18 path
-        #    This addresses the EEXIST error directly.
-        - |
-          AMPLIFY_OLD_BIN="/root/.nvm/versions/node/v18.20.8/bin/amplify"
-          if [ -f "$AMPLIFY_OLD_BIN" ]; then
-            echo "Removing old Amplify CLI binary at $AMPLIFY_OLD_BIN..."
-            rm "$AMPLIFY_OLD_BIN"
-          fi
-          echo "Checked for and removed old Amplify CLI binary if present."
+        # 1. More robust cleanup of old Amplify CLI binary
+        #    a. Determine the old Node 18 path dynamically (safer than hardcoding)
+        - OLD_NODE_BIN_PATH=$(find /root/.nvm/versions/node/v18.* -maxdepth 0 -type d 2>/dev/null)
+        - echo "Detected old Node 18 bin path: $OLD_NODE_BIN_PATH"
 
-        # 3. Reinstall the latest Amplify backend CLI globally, ensuring it's for Node 22
-        - npm install -g @aws-amplify/backend-cli@latest --prefix /usr/local
-        # --prefix /usr/local might help if it's struggling with nvm's global path
-        # Alternatively, if --prefix doesn't work well with Amplify's expectations, just use:
-        # - npm install -g @aws-amplify/backend-cli@latest
-        # The key is that the Node 22 context is fully active.
+        #    b. Remove the problematic global amplify executable IF it exists
+        - |
+          if [ -d "$OLD_NODE_BIN_PATH/bin" ]; then
+            AMPLIFY_OLD_BIN="$OLD_NODE_BIN_PATH/bin/amplify"
+            echo "Checking for old Amplify CLI binary at $AMPLIFY_OLD_BIN..."
+            if [ -f "$AMPLIFY_OLD_BIN" ]; then
+              echo "Removing old Amplify CLI binary: $AMPLIFY_OLD_BIN"
+              rm -f "$AMPLIFY_OLD_BIN" # Use -f for force removal without prompt
+              echo "Removal attempt output: $?"
+            else
+              echo "Old Amplify CLI binary not found at $AMPLIFY_OLD_BIN."
+            fi
+          else
+            echo "Node 18 bin directory not found, skipping old Amplify CLI removal."
+          fi
+
+        # 2. Reinstall the latest Amplify backend CLI globally
+        #    Option A: Try without --force first
+        - npm install -g @aws-amplify/backend-cli@latest
+        #    Option B: If the above still fails with EEXIST, uncomment and try with --force
+        # - npm install -g @aws-amplify/backend-cli@latest --force
         - echo "Amplify backend CLI installed in backend install phase."
         - echo "--- END OF BACKEND INSTALL PHASE COMMANDS ---"
 
