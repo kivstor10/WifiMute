@@ -1,5 +1,5 @@
 version: 1
-artifacts:
+artifacts:           # <--- THIS IS THE MISSING TOP-LEVEL KEY
   baseDirectory: dist
   files:
     - '**/*'
@@ -8,18 +8,18 @@ backend:
   phases:
     install:
       runtime-versions:
-        nodejs: 22 # Still good to declare the desired version
+        nodejs: 22
       commands:
         - echo "--- BEGINNING OF BACKEND INSTALL PHASE COMMANDS ---"
         - echo "Initial node version check (before any NVM):"
-        - node -v # Check initial default
-        - which node # Check initial path
+        - node -v
+        - which node
 
         - rm -rf .npm
         - rm -rf node_modules
         - echo "Cleaned up .npm and node_modules for backend install."
 
-        - | # Ensure nvm is sourced
+        - |
           if [ -s "$NVM_DIR/nvm.sh" ]; then
             . "$NVM_DIR/nvm.sh"
           elif [ -s "/usr/local/nvm/nvm.sh" ]; then
@@ -27,23 +27,22 @@ backend:
           fi
           echo "NVM sourced."
 
-        # Install and use Node.js 22 explicitly with nvm
         - nvm install 22 || echo "nvm install 22 command failed, check nvm setup. Continuing anyway..."
         - nvm use 22 || echo "nvm use 22 command failed, check nvm setup. Continuing anyway..."
-        - node -v # VERIFY: This should print v22.x.x
-        - npm -v  # VERIFY: This should print npm version compatible with Node 22
+        - node -v
+        - npm -v
         - echo "Node.js version check complete in backend install phase."
 
-        # Ensure the PATH is updated for global commands (very important!)
-        - export PATH="$NVM_DIR/versions/node/v22.x.x/bin:$PATH" # Adjust v22.x.x to match your exact install, or simply "$NVM_DIR/current/bin:$PATH" if nvm sets 'current' alias
+        # Ensure the PATH is updated for global commands
+        # Use "$NVM_DIR/versions/node/$(node -p "process.versions.node")" if you want to be precise after nvm use,
+        # or simpler: "$NVM_DIR/current/bin:$PATH" if nvm sets 'current' alias
+        - export PATH="$NVM_DIR/versions/node/v22.0.0/bin:$PATH" # Adjust v22.0.0 if your exact version is different
         - echo "PATH after NVM: $PATH"
-        - which node # Verify the correct node is now found
+        - which node
 
-        # Install backend project dependencies
         - npm ci --cache .npm --prefer-offline
         - echo "Backend npm ci completed."
 
-        # Install the latest Amplify backend CLI globally to ensure CDK compatibility
         - npm install -g @aws-amplify/backend-cli@latest
         - echo "Amplify backend CLI installed in backend install phase."
         - echo "--- END OF BACKEND INSTALL PHASE COMMANDS ---"
@@ -51,9 +50,8 @@ backend:
     build:
       commands:
         - echo "Node.js version at beginning of backend build phase (critical check):"
-        - node -v # CRITICAL VERIFY HERE! This *must* be 22.x.x
-        - which node # Should point to the nvm-managed Node 22
-        # Execute the Amplify pipeline deployment command
+        - node -v
+        - which node
         - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
         - echo "Amplify backend deployment command executed."
 
@@ -63,16 +61,20 @@ frontend:
       commands:
         - echo "--- BEGINNING OF FRONTEND BUILD PHASE COMMANDS ---"
         - echo "Node.js version at beginning of frontend build phase:"
-        - node -v # Verify Node version for frontend build too
+        - node -v
         - which node
-        # Install frontend project dependencies
         - npm ci --cache .npm --prefer-offline
         - echo "Frontend npm ci completed within build phase."
 
-        # Execute the frontend build command (e.g., tsc && vite build)
         - npm run build
         - echo "Frontend build command executed."
         - echo "--- END OF FRONTEND BUILD PHASE COMMANDS ---"
+  # You can keep this frontend-specific artifacts section too,
+  # but the top-level one is essential for the build to start.
+  artifacts: # This one is for the frontend section, the top-level one is for the whole build
+    baseDirectory: dist
+    files:
+      - '**/*'
   cache:
     paths:
       - .npm/**/*
