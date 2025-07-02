@@ -19,7 +19,9 @@ backend:
         - rm -rf node_modules
         - echo "Cleaned up .npm and node_modules for backend install."
 
-        - # Ensure nvm is sourced
+        # Ensure nvm is sourced. The '|' indicates a multi-line scalar,
+        # where indentation within the block is preserved relative to the first line.
+        - |
           if [ -s "$NVM_DIR/nvm.sh" ]; then
             . "$NVM_DIR/nvm.sh"
           elif [ -s "/usr/local/nvm/nvm.sh" ]; then
@@ -34,6 +36,7 @@ backend:
         - echo "Node.js version check complete in backend install phase."
 
         # Add this export to make sure nvm's current path is in effect
+        # Using `nvm_current` is robust as it points to the active nvm version.
         - export PATH="$(nvm_current)/bin:$PATH"
         - echo "PATH after NVM: $PATH"
         - which node # Should now point to the NVM Node 22 path
@@ -53,6 +56,7 @@ backend:
 
         # The key change: Explicitly use the Node 22 binary for npx
         # We assume nvm_current is available from the sourced nvm.sh
+        # This command needs to be correctly indented, aligning with other commands in the 'commands' list.
         - "$(nvm_current)/bin/npx" ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
         # OR if nvm_current is not recognized by the shell for some reason, use the explicit path:
         # - "/root/.nvm/versions/node/v22.0.0/bin/npx" ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
