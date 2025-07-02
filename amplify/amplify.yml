@@ -1,7 +1,7 @@
 version: 1
 # This configuration is updated to resolve the EEXIST error during npm global install.
-# The primary change is simplifying the installation commands and using --force
-# to allow npm to overwrite conflicting files left by previous Node.js versions.
+# The primary change is to manually find and remove any old 'amplify' binaries
+# before attempting the new installation with --force.
 
 backend:
   phases:
@@ -12,21 +12,24 @@ backend:
       commands:
         - echo "--- Backend Install Phase ---"
         # Ensure nvm is available and switch to the desired version for this shell session.
-        # This guarantees that subsequent `node` and `npm` commands use version 22.
         - . "$NVM_DIR/nvm.sh"
         - nvm install 22
         - nvm use 22
         - echo "Switched to Node.js version:"
         - node -v
 
+        # KEY FIX: Aggressively find and remove any old 'amplify' binaries
+        # from any Node.js version directory managed by nvm. This is a more
+        # robust way to prevent the EEXIST error.
+        - echo "Searching for and removing pre-existing 'amplify' binaries..."
+        - find /root/.nvm/versions/node/ -type f -name "amplify" -exec rm -f {} \;
+        - echo "Pre-existing binaries removed."
+
         # Clean the npm cache to prevent issues with stale packages.
         - npm cache clean --force
         
-        # KEY FIX: Install the Amplify Backend CLI globally using --force.
-        # The --force flag is crucial here. It tells npm to overwrite the existing
-        # binary file (/root/.nvm/versions/node/v18.20.8/bin/amplify) that is
-        # causing the EEXIST error. This is a safe and standard practice in an
-        # ephemeral build environment.
+        # Now that the conflicting file is confirmed to be gone, this install should succeed.
+        # We keep --force as an extra precaution.
         - npm install -g @aws-amplify/backend-cli@latest --force
         - echo "Successfully installed @aws-amplify/backend-cli."
         - echo "--- End of Backend Install Phase ---"
@@ -35,7 +38,6 @@ backend:
         - echo "--- Backend Build Phase ---"
         # Because the install phase correctly set the Node.js version,
         # we can now directly use `npx` without a complex path.
-        # It will resolve to the `npx` from the Node.js 22 installation.
         - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
         - echo "Backend deployment command executed."
 
