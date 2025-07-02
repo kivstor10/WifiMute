@@ -35,6 +35,17 @@ button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
+nav{
+  position: absolute;
+  top: 0;
+  width: max-content;
+  display: flex;
+  left: 0;
+  right: 0;
+  width: 100vw;
+  flex-direction: row;  
+}
+
 ul {
   padding-inline-start: 0;
   margin-block-start: 0;
@@ -43,16 +54,17 @@ ul {
   display: flex;
   flex-direction: column;
   margin: 8px 0;
-  border: 1px solid black;
-  gap: 1px;
-  background-color: black;
-  border-radius: 8px;
   overflow: auto;
+  min-width: 300px;
+  max-width: 600px;
 }
 
 li {
   background-color: white;
   padding: 8px;
+  margin: 10px 5px;
+  box-shadow: #a2a2a28b 2px 4px 2px;
+  border-radius: 8px;
 }
 
 li:hover {
