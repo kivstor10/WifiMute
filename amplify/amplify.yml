@@ -1,30 +1,44 @@
 version: 1
-# This configuration is updated to resolve the EEXIST error by avoiding a global
-# installation entirely. Instead, it uses `npx` to directly download and execute
-# the Amplify Backend CLI in a single command.
+# This is a highly defensive configuration to combat the persistent EEXIST error.
+# It aggressively cleans up old files and uses explicit paths to ensure the correct
+# Node.js version and tools are used in each phase.
 
 backend:
   phases:
     install:
-      # This tells Amplify to use a base image with Node.js 22.
       runtime-versions:
         nodejs: 22
       commands:
         - echo "--- Backend Install Phase ---"
-        # We only need to set the Node.js version here. No global install is needed.
         - . "$NVM_DIR/nvm.sh"
         - nvm install 22
         - nvm use 22
-        - echo "Switched to Node.js version:"
+        - echo "Node version set to:"
         - node -v
+        # Debugging: List the contents of the problematic directory before cleaning.
+        - echo "Listing contents of old Node 18 bin before cleanup:"
+        - ls -la /root/.nvm/versions/node/v18.20.8/bin/ || echo "Old bin directory not found."
+        # Aggressively find and remove ANY 'amplify' binary from nvm's directories.
+        - echo "Searching for and removing pre-existing 'amplify' binaries..."
+        - find /root/.nvm/versions/node/ -type f -name "amplify" -exec rm -f {} \;
+        - echo "Cleanup complete."
+        # Debugging: List the contents again to confirm removal.
+        - echo "Listing contents of old Node 18 bin after cleanup:"
+        - ls -la /root/.nvm/versions/node/v18.20.8/bin/ || echo "Old bin directory not found."
         - echo "--- End of Backend Install Phase ---"
     build:
       commands:
         - echo "--- Backend Build Phase ---"
-        # KEY FIX: Use `npx --package` to download and run the CLI without a global install.
-        # This is the most reliable way to avoid EEXIST errors and other global state issues.
-        # It fetches the package, runs the command, and then cleans up.
-        - npx --package=@aws-amplify/backend-cli@latest ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
+        # Re-initialize nvm for this phase to ensure a clean shell state, as build phases can be separate.
+        - . "$NVM_DIR/nvm.sh"
+        - nvm use 22
+        - echo "Node version for build phase:"
+        - node -v
+        # KEY FIX: Use the explicit, absolute path to the Node 22 'npx' binary.
+        # This avoids any PATH issues and guarantees we are using the correct version's tool.
+        - NPX_PATH="$(dirname $(nvm which 22))/npx"
+        - echo "Using npx from: $NPX_PATH"
+        - $NPX_PATH --package=@aws-amplify/backend-cli@latest ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
         - echo "Backend deployment command executed successfully."
 
 frontend:
@@ -32,12 +46,10 @@ frontend:
     preBuild:
       commands:
         - echo "--- Frontend preBuild Phase ---"
-        # Ensure the frontend also uses the correct Node version.
         - . "$NVM_DIR/nvm.sh"
         - nvm use 22
         - echo "Node version for frontend:"
         - node -v
-        # Use npm ci for clean, consistent, and faster frontend dependency installation.
         - npm ci
         - echo "Frontend dependencies installed with npm ci."
     build:
@@ -46,7 +58,6 @@ frontend:
         - npm run build
         - echo "Frontend build completed."
   artifacts:
-    # The baseDirectory should point to your build output directory (e.g., 'dist', 'build', '.next').
     baseDirectory: dist
     files:
       - '**/*'
