@@ -1,7 +1,7 @@
 version: 1
-# This configuration is updated to resolve the EEXIST error by changing the
-# global npm installation directory to a clean, isolated path. This avoids
-# any conflicts with pre-existing files from older Node.js versions.
+# This configuration is updated to resolve the EEXIST error by avoiding a global
+# installation entirely. Instead, it uses `npx` to directly download and execute
+# the Amplify Backend CLI in a single command.
 
 backend:
   phases:
@@ -11,43 +11,28 @@ backend:
         nodejs: 22
       commands:
         - echo "--- Backend Install Phase ---"
-        # Ensure nvm is available and switch to the desired version for this shell session.
+        # We only need to set the Node.js version here. No global install is needed.
         - . "$NVM_DIR/nvm.sh"
         - nvm install 22
         - nvm use 22
         - echo "Switched to Node.js version:"
         - node -v
-
-        # KEY FIX: Create a new directory for global npm packages and configure npm to use it.
-        # This completely avoids conflicts with the default directory, which is causing the EEXIST error.
-        - mkdir -p /tmp/npm-global
-        - npm config set prefix '/tmp/npm-global'
-
-        # Add our new, clean global bin directory to the system's PATH.
-        # This is crucial so the shell can find the 'ampx' command later.
-        - export PATH=/tmp/npm-global/bin:$PATH
-        
-        # Now, install the Amplify CLI globally. It will be installed safely into our new directory.
-        - npm install -g @aws-amplify/backend-cli@latest
-        - echo "Successfully installed @aws-amplify/backend-cli into custom directory."
         - echo "--- End of Backend Install Phase ---"
     build:
       commands:
         - echo "--- Backend Build Phase ---"
-        # Add our custom global bin directory to the PATH again to ensure it's available in this phase.
-        - export PATH=/tmp/npm-global/bin:$PATH
-        # Verify that the 'ampx' command is found in our custom path.
-        - which ampx
-        # The npx command should now find the ampx binary in our custom global directory.
-        - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
-        - echo "Backend deployment command executed."
+        # KEY FIX: Use `npx --package` to download and run the CLI without a global install.
+        # This is the most reliable way to avoid EEXIST errors and other global state issues.
+        # It fetches the package, runs the command, and then cleans up.
+        - npx --package=@aws-amplify/backend-cli@latest ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
+        - echo "Backend deployment command executed successfully."
 
 frontend:
   phases:
     preBuild:
       commands:
         - echo "--- Frontend preBuild Phase ---"
-        # It's good practice to ensure the frontend also uses the correct Node version.
+        # Ensure the frontend also uses the correct Node version.
         - . "$NVM_DIR/nvm.sh"
         - nvm use 22
         - echo "Node version for frontend:"
