@@ -169,7 +169,7 @@ function App() {
             open={scheduleOpen}
             onClose={() => setScheduleOpen(false)}
             onSubmit={handleScheduleSubmit}
-            deviceName={deviceToSchedule?.name}
+            deviceName={deviceToSchedule?.name ?? undefined}
           />
         </main>
       </>
