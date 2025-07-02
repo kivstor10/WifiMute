@@ -1,7 +1,8 @@
 version: 1
-# This is a highly defensive configuration to combat the persistent EEXIST error.
-# It aggressively cleans up old files and uses explicit paths to ensure the correct
-# Node.js version and tools are used in each phase.
+artifacts:
+  baseDirectory: dist
+  files:
+    - '**/*'
 
 backend:
   phases:
@@ -9,60 +10,106 @@ backend:
       runtime-versions:
         nodejs: 22
       commands:
-        - echo "--- Backend Install Phase ---"
-        - . "$NVM_DIR/nvm.sh"
-        - nvm install 22
-        - nvm use 22
-        - echo "Node version set to:"
+        - echo "--- BEGINNING OF BACKEND INSTALL PHASE COMMANDS ---"
+        - echo "Initial node version check (before any NVM):"
         - node -v
-        # Debugging: List the contents of the problematic directory before cleaning.
-        - echo "Listing contents of old Node 18 bin before cleanup:"
-        - ls -la /root/.nvm/versions/node/v18.20.8/bin/ || echo "Old bin directory not found."
-        # Aggressively find and remove ANY 'amplify' binary from nvm's directories.
-        - echo "Searching for and removing pre-existing 'amplify' binaries..."
-        - find /root/.nvm/versions/node/ -type f -name "amplify" -exec rm -f {} \;
-        - echo "Cleanup complete."
-        # Debugging: List the contents again to confirm removal.
-        - echo "Listing contents of old Node 18 bin after cleanup:"
-        - ls -la /root/.nvm/versions/node/v18.20.8/bin/ || echo "Old bin directory not found."
-        - echo "--- End of Backend Install Phase ---"
+        - which node
+
+        - rm -rf .npm
+        - rm -rf node_modules
+        - echo "Cleaned up .npm and node_modules for backend install."
+
+        # This block is already using the multi-line scalar '|' which handles internal quoting
+        - |
+          if [ -s "$NVM_DIR/nvm.sh" ]; then
+            . "$NVM_DIR/nvm.sh"
+          elif [ -s "/usr/local/nvm/nvm.sh" ]; then
+            . "/usr/local/nvm/nvm.sh"
+          fi
+          echo "NVM sourced."
+
+        - nvm install 22 || echo "nvm install 22 command failed, check nvm setup. Continuing anyway..."
+        - nvm use 22 || echo "nvm use 22 command failed, check nvm setup. Continuing anyway..."
+        - node -v # VERIFY: This should print v22.x.x
+        - npm -v  # VERIFY: This should print npm version compatible with Node 22
+        - echo "Node.js version check complete in backend install phase."
+
+        # Add this export to make sure nvm's current path is in effect
+        - export PATH="$(nvm_current)/bin:$PATH"
+        - echo "PATH after NVM: $PATH"
+        - which node # Should now point to the NVM Node 22 path
+
+        # --- Aggressive NPM Global Install Cleanliness & Debugging ---
+        - npm cache clean --force
+        - echo "npm cache cleaned."
+
+        # Debugging the OLD_NODE_BIN_PATH detection
+        - echo "Attempting to find Node 18 NVM path..."
+        # QUOTE THE FIND COMMAND BECAUSE OF ':', '/', '*', and '>' characters
+        - OLD_NODE_BIN_ROOT=$(find /root/.nvm/versions/node/v18.* -maxdepth 0 -type d 2>/dev/null)
+        - echo "Detected OLD_NODE_BIN_ROOT: '$OLD_NODE_BIN_ROOT'"
+
+        # Construct the full path to the old amplify binary
+        # This assignment itself doesn't need quotes unless the variable contains special chars.
+        - AMPLIFY_OLD_BIN="${OLD_NODE_BIN_ROOT}/bin/amplify"
+        - echo "Full path to check for old Amplify CLI binary: '$AMPLIFY_OLD_BIN'"
+
+        # This multi-line block should already be fine with '|'
+        - |
+          if [ -d "$OLD_NODE_BIN_ROOT/bin" ]; then
+            echo "Node 18 bin directory exists: $OLD_NODE_BIN_ROOT/bin"
+            if [ -f "$AMPLIFY_OLD_BIN" ]; then
+              echo "OLD_AMPLIFY_BIN detected. Attempting to remove: '$AMPLIFY_OLD_BIN'"
+              # Quote rm command only if $AMPLIFY_OLD_BIN has spaces/special chars, but safer to assume it doesn't
+              rm -f "$AMPLIFY_OLD_BIN" # Keep this quoted to handle spaces in path, just in case
+              REMOVE_STATUS=$?
+              echo "rm -f command exit status: $REMOVE_STATUS"
+              if [ $REMOVE_STATUS -eq 0 ]; then
+                echo "Successfully removed old Amplify CLI binary."
+              else
+                echo "Failed to remove old Amplify CLI binary (exit status: $REMOVE_STATUS)."
+              fi
+            else
+              echo "Old Amplify CLI binary NOT found at '$AMPLIFY_OLD_BIN'."
+            fi
+          else
+            echo "Node 18 NVM root directory or its 'bin' sub-directory not found. Skipping old Amplify CLI removal."
+          fi
+
+        # Install latest Amplify backend CLI globally with --force
+        - npm install -g @aws-amplify/backend-cli@latest --force
+        - echo "Amplify backend CLI installed in backend install phase (potentially with --force)."
+        - echo "--- END OF BACKEND INSTALL PHASE COMMANDS ---"
+
     build:
       commands:
-        - echo "--- Backend Build Phase ---"
-        # Re-initialize nvm for this phase to ensure a clean shell state, as build phases can be separate.
-        - . "$NVM_DIR/nvm.sh"
-        - nvm use 22
-        - echo "Node version for build phase:"
-        - node -v
-        # KEY FIX: Use the explicit, absolute path to the Node 22 'npx' binary.
-        # This avoids any PATH issues and guarantees we are using the correct version's tool.
-        - NPX_PATH="$(dirname $(nvm which 22))/npx"
-        - echo "Using npx from: $NPX_PATH"
-        - $NPX_PATH --package=@aws-amplify/backend-cli@latest ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
-        - echo "Backend deployment command executed successfully."
+        - echo "Node.js version at beginning of backend build phase (critical check):"
+        - node -v # CRITICAL VERIFY HERE! This *must* be 22.x.x
+        - which node # Should point to the nvm-managed Node 22
+
+        # This command should already be fine as it's a simple execution
+        - "$(nvm_current)/bin/npx" ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
+        - echo "Amplify backend deployment command executed."
 
 frontend:
   phases:
-    preBuild:
-      commands:
-        - echo "--- Frontend preBuild Phase ---"
-        - . "$NVM_DIR/nvm.sh"
-        - nvm use 22
-        - echo "Node version for frontend:"
-        - node -v
-        - npm ci
-        - echo "Frontend dependencies installed with npm ci."
     build:
       commands:
-        - echo "--- Frontend Build Phase ---"
+        - echo "--- BEGINNING OF FRONTEND BUILD PHASE COMMANDS ---"
+        - echo "Node.js version at beginning of frontend build phase:"
+        - node -v
+        - which node
+        - npm ci --cache .npm --prefer-offline
+        - echo "Frontend npm ci completed within build phase."
+
         - npm run build
-        - echo "Frontend build completed."
+        - echo "Frontend build command executed."
+        - echo "--- END OF FRONTEND BUILD PHASE COMMANDS ---"
   artifacts:
     baseDirectory: dist
     files:
       - '**/*'
   cache:
     paths:
-      # Caching node_modules and the npm cache directory can speed up subsequent builds.
-      - node_modules/**/*
       - .npm/**/*
+      - node_modules/**/*
