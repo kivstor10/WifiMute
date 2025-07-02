@@ -1,105 +1,69 @@
 version: 1
-artifacts:
-  baseDirectory: dist
-  files:
-    - '**/*'
+# This configuration is updated to resolve the EEXIST error during npm global install.
+# The primary change is simplifying the installation commands and using --force
+# to allow npm to overwrite conflicting files left by previous Node.js versions.
 
 backend:
   phases:
     install:
+      # This tells Amplify to use a base image with Node.js 22.
       runtime-versions:
         nodejs: 22
       commands:
-        - echo "--- BEGINNING OF BACKEND INSTALL PHASE COMMANDS ---"
-        - echo "Initial node version check (before any NVM):"
+        - echo "--- Backend Install Phase ---"
+        # Ensure nvm is available and switch to the desired version for this shell session.
+        # This guarantees that subsequent `node` and `npm` commands use version 22.
+        - . "$NVM_DIR/nvm.sh"
+        - nvm install 22
+        - nvm use 22
+        - echo "Switched to Node.js version:"
         - node -v
-        - which node
 
-        - rm -rf .npm
-        - rm -rf node_modules
-        - echo "Cleaned up .npm and node_modules for backend install."
-
-        - | # Ensure nvm is sourced
-          if [ -s "$NVM_DIR/nvm.sh" ]; then
-            . "$NVM_DIR/nvm.sh"
-          elif [ -s "/usr/local/nvm/nvm.sh" ]; then
-            . "/usr/local/nvm/nvm.sh"
-          fi
-          echo "NVM sourced."
-
-        - nvm install 22 || echo "nvm install 22 command failed, check nvm setup. Continuing anyway..."
-        - nvm use 22 || echo "nvm use 22 command failed, check nvm setup. Continuing anyway..."
-        - node -v # VERIFY: This should print v22.x.x
-        - npm -v  # VERIFY: This should print npm version compatible with Node 22
-        - echo "Node.js version check complete in backend install phase."
-
-        # Add this export to make sure nvm's current path is in effect
-        - export PATH="$(nvm_current)/bin:$PATH"
-        - echo "PATH after NVM: $PATH"
-        - which node # Should now point to the NVM Node 22 path
-
-        # --- NEW STEPS FOR NPM GLOBAL INSTALL CLEANLINESS ---
+        # Clean the npm cache to prevent issues with stale packages.
         - npm cache clean --force
-        - echo "npm cache cleaned."
-
-        # 1. More robust cleanup of old Amplify CLI binary
-        #    a. Determine the old Node 18 path dynamically (safer than hardcoding)
-        - OLD_NODE_BIN_PATH=$(find /root/.nvm/versions/node/v18.* -maxdepth 0 -type d 2>/dev/null)
-        - echo "Detected old Node 18 bin path: $OLD_NODE_BIN_PATH"
-
-        #    b. Remove the problematic global amplify executable IF it exists
-        - |
-          if [ -d "$OLD_NODE_BIN_PATH/bin" ]; then
-            AMPLIFY_OLD_BIN="$OLD_NODE_BIN_PATH/bin/amplify"
-            echo "Checking for old Amplify CLI binary at $AMPLIFY_OLD_BIN..."
-            if [ -f "$AMPLIFY_OLD_BIN" ]; then
-              echo "Removing old Amplify CLI binary: $AMPLIFY_OLD_BIN"
-              rm -f "$AMPLIFY_OLD_BIN" # Use -f for force removal without prompt
-              echo "Removal attempt output: $?"
-            else
-              echo "Old Amplify CLI binary not found at $AMPLIFY_OLD_BIN."
-            fi
-          else
-            echo "Node 18 bin directory not found, skipping old Amplify CLI removal."
-          fi
-
-        # 2. Reinstall the latest Amplify backend CLI globally
-        #    Option A: Try without --force first
-        - npm install -g @aws-amplify/backend-cli@latest
-        #    Option B: If the above still fails with EEXIST, uncomment and try with --force
-        # - npm install -g @aws-amplify/backend-cli@latest --force
-        - echo "Amplify backend CLI installed in backend install phase."
-        - echo "--- END OF BACKEND INSTALL PHASE COMMANDS ---"
-
+        
+        # KEY FIX: Install the Amplify Backend CLI globally using --force.
+        # The --force flag is crucial here. It tells npm to overwrite the existing
+        # binary file (/root/.nvm/versions/node/v18.20.8/bin/amplify) that is
+        # causing the EEXIST error. This is a safe and standard practice in an
+        # ephemeral build environment.
+        - npm install -g @aws-amplify/backend-cli@latest --force
+        - echo "Successfully installed @aws-amplify/backend-cli."
+        - echo "--- End of Backend Install Phase ---"
     build:
       commands:
-        - echo "Node.js version at beginning of backend build phase (critical check):"
-        - node -v # CRITICAL VERIFY HERE! This *must* be 22.x.x
-        - which node # Should point to the nvm-managed Node 22
-
-        # The key change: Explicitly use the Node 22 binary for npx
-        - "$(nvm_current)/bin/npx" ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
-        - echo "Amplify backend deployment command executed."
+        - echo "--- Backend Build Phase ---"
+        # Because the install phase correctly set the Node.js version,
+        # we can now directly use `npx` without a complex path.
+        # It will resolve to the `npx` from the Node.js 22 installation.
+        - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
+        - echo "Backend deployment command executed."
 
 frontend:
   phases:
+    preBuild:
+      commands:
+        - echo "--- Frontend preBuild Phase ---"
+        # It's good practice to ensure the frontend also uses the correct Node version.
+        - . "$NVM_DIR/nvm.sh"
+        - nvm use 22
+        - echo "Node version for frontend:"
+        - node -v
+        # Use npm ci for clean, consistent, and faster frontend dependency installation.
+        - npm ci
+        - echo "Frontend dependencies installed with npm ci."
     build:
       commands:
-        - echo "--- BEGINNING OF FRONTEND BUILD PHASE COMMANDS ---"
-        - echo "Node.js version at beginning of frontend build phase:"
-        - node -v
-        - which node
-        - npm ci --cache .npm --prefer-offline
-        - echo "Frontend npm ci completed within build phase."
-
+        - echo "--- Frontend Build Phase ---"
         - npm run build
-        - echo "Frontend build command executed."
-        - echo "--- END OF FRONTEND BUILD PHASE COMMANDS ---"
+        - echo "Frontend build completed."
   artifacts:
+    # The baseDirectory should point to your build output directory (e.g., 'dist', 'build', '.next').
     baseDirectory: dist
     files:
       - '**/*'
   cache:
     paths:
-      - .npm/**/*
+      # Caching node_modules and the npm cache directory can speed up subsequent builds.
       - node_modules/**/*
+      - .npm/**/*
