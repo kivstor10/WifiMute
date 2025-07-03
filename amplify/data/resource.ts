@@ -6,26 +6,16 @@ adding a new "isDone" field as a boolean. The authorization rule below
 specifies that any user authenticated via an API key can "create", "read",
 "update", and "delete" any "Todo" records.
 =========================================================================*/
-interface DeviceModel {
-  name: string;
-  staticIp: string;
-  wifiMac: string;
-  blockStatus: "ON" | "OFF";
-  scheduleFrom: number; // minutes since midnight
-  scheduleTo: number;   // minutes since midnight
-}
-
 const schema = a.schema({
   Device: a
-    .model<DeviceModel>({
+    .model({
       name: a.string(),
       staticIp: a.string(),
       wifiMac: a.string(),
       blockStatus: a.enum(["ON", "OFF"]),
       scheduleFrom: a.integer(), // minutes since midnight
       scheduleTo: a.integer(),   // minutes since midnight
-    })
-    .authorization((allow: typeof a.allow) => [allow.publicApiKey()]),
+    }),
 });
 
 export type Schema = ClientSchema<typeof schema>;
