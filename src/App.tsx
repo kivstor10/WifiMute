@@ -41,6 +41,7 @@ function App() {
     client.models.Device.create({
       ...data,
       blockStatus: "OFF",
+      owner: "admin" // or get the current user, or a placeholder
     });
   }
 
