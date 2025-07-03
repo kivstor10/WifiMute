@@ -1,8 +1,4 @@
 version: 1
-artifacts:
-  baseDirectory: dist
-  files:
-    - '**/*'
 
 backend:
   phases:
@@ -14,11 +10,9 @@ backend:
         - echo "Initial node version check (before any NVM):"
         - node -v
         - which node
-
         - rm -rf .npm
         - rm -rf node_modules
         - echo "Cleaned up .npm and node_modules for backend install."
-
         - |
           if [ -s "$NVM_DIR/nvm.sh" ]; then
             . "$NVM_DIR/nvm.sh"
@@ -26,20 +20,16 @@ backend:
             . "/usr/local/nvm/nvm.sh"
           fi
           echo "NVM sourced."
-
         - nvm install 22 || echo "nvm install 22 command failed, check nvm setup. Continuing anyway..."
         - nvm use 22 || echo "nvm use 22 command failed, check nvm setup. Continuing anyway..."
         - node -v
         - npm -v
         - echo "Node.js version check complete in backend install phase."
-
         - export PATH="$(nvm_current)/bin:$PATH"
         - echo "PATH after NVM: $PATH"
         - which node
-
         - npm cache clean --force
         - echo "npm cache cleaned."
-
         - |
             OLD_NODE_BIN_ROOT=$(find /root/.nvm/versions/node/v18.* -maxdepth 0 -type d 2>/dev/null)
             echo "Detected OLD_NODE_BIN_ROOT: '$OLD_NODE_BIN_ROOT'"
@@ -63,11 +53,9 @@ backend:
             else
               echo "Node 18 NVM root directory or its 'bin' sub-directory not found. Skipping old Amplify CLI removal."
             fi
-
         - npm install -g @aws-amplify/backend-cli@latest --force
         - echo "Amplify backend CLI installed in backend install phase (potentially with --force)."
         - echo "--- END OF BACKEND INSTALL PHASE COMMANDS ---"
-
     build:
       commands:
         - echo "Node.js version at beginning of backend build phase (critical check):"
@@ -86,7 +74,6 @@ frontend:
         - which node
         - npm ci --cache .npm --prefer-offline
         - echo "Frontend npm ci completed within build phase."
-
         - npm run build
         - echo "Frontend build command executed."
         - echo "--- END OF FRONTEND BUILD PHASE COMMANDS ---"
