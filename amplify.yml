@@ -73,7 +73,6 @@ backend:
         - echo "Node.js version at beginning of backend build phase (critical check):"
         - node -v
         - which node
-
         - "$(nvm_current)/bin/npx" ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
         - echo "Amplify backend deployment command executed."
 
