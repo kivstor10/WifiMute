@@ -40,33 +40,29 @@ backend:
         - npm cache clean --force
         - echo "npm cache cleaned."
 
-        # Re-attempting the problematic find command line using single quotes for the string
-        # This forces the *entire string* to be treated as a literal.
-        - 'OLD_NODE_BIN_ROOT=$(find /root/.nvm/versions/node/v18.* -maxdepth 0 -type d 2>/dev/null)'
-        - echo "Detected OLD_NODE_BIN_ROOT: '$OLD_NODE_BIN_ROOT'"
-
-        - AMPLIFY_OLD_BIN="${OLD_NODE_BIN_ROOT}/bin/amplify"
-        - echo "Full path to check for old Amplify CLI binary: '$AMPLIFY_OLD_BIN'"
-
         - |
-          if [ -d "$OLD_NODE_BIN_ROOT/bin" ]; then
-            echo "Node 18 bin directory exists: $OLD_NODE_BIN_ROOT/bin"
-            if [ -f "$AMPLIFY_OLD_BIN" ]; then
-              echo "OLD_AMPLIFY_BIN detected. Attempting to remove: '$AMPLIFY_OLD_BIN'"
-              rm -f "$AMPLIFY_OLD_BIN"
-              REMOVE_STATUS=$?
-              echo "rm -f command exit status: $REMOVE_STATUS"
-              if [ $REMOVE_STATUS -eq 0 ]; then
-                echo "Successfully removed old Amplify CLI binary."
+            OLD_NODE_BIN_ROOT=$(find /root/.nvm/versions/node/v18.* -maxdepth 0 -type d 2>/dev/null)
+            echo "Detected OLD_NODE_BIN_ROOT: '$OLD_NODE_BIN_ROOT'"
+            AMPLIFY_OLD_BIN="${OLD_NODE_BIN_ROOT}/bin/amplify"
+            echo "Full path to check for old Amplify CLI binary: '$AMPLIFY_OLD_BIN'"
+            if [ -d "$OLD_NODE_BIN_ROOT/bin" ]; then
+              echo "Node 18 bin directory exists: $OLD_NODE_BIN_ROOT/bin"
+              if [ -f "$AMPLIFY_OLD_BIN" ]; then
+                echo "OLD_AMPLIFY_BIN detected. Attempting to remove: '$AMPLIFY_OLD_BIN'"
+                rm -f "$AMPLIFY_OLD_BIN"
+                REMOVE_STATUS=$?
+                echo "rm -f command exit status: $REMOVE_STATUS"
+                if [ $REMOVE_STATUS -eq 0 ]; then
+                  echo "Successfully removed old Amplify CLI binary."
+                else
+                  echo "Failed to remove old Amplify CLI binary (exit status: $REMOVE_STATUS)."
+                fi
               else
-                echo "Failed to remove old Amplify CLI binary (exit status: $REMOVE_STATUS)."
+                echo "Old Amplify CLI binary NOT found at '$AMPLIFY_OLD_BIN'."
               fi
             else
-              echo "Old Amplify CLI binary NOT found at '$AMPLIFY_OLD_BIN'."
+              echo "Node 18 NVM root directory or its 'bin' sub-directory not found. Skipping old Amplify CLI removal."
             fi
-          else
-            echo "Node 18 NVM root directory or its 'bin' sub-directory not found. Skipping old Amplify CLI removal."
-          fi
 
         - npm install -g @aws-amplify/backend-cli@latest --force
         - echo "Amplify backend CLI installed in backend install phase (potentially with --force)."
