@@ -1,31 +1,35 @@
 body {
   margin: 0;
+  margin-top: 60px;
   background: white;
   display: flex;
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   height: 100vh;
   width: 100vw;
   justify-content: center;
-  align-items: center;
+  /* align-items: center; */
+  padding: 20px;
 }
 
 main {
   display: flex;
   flex-direction: column;
   align-items: stretch;
+  max-width: 500px;
+  min-width: 320px;
 }
 
-button {
+#root > main > button {
   border-radius: 8px;
   border: 1px solid transparent;
-  padding: 0.6em 1.2em;
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
+  background-color: rgb(68, 118, 255);
   cursor: pointer;
   transition: border-color 0.25s;
   color: white;
+  margin: 0 20px;
 }
 button:hover {
   border-color: #646cff;
@@ -60,16 +64,13 @@ main > ul {
 }
 
 main > ul > li {
-  background-color: white;
+  background-color: rgb(241, 241, 241);
   padding: 8px;
   margin: 10px 5px;
   box-shadow: #a2a2a28b 2px 4px 2px;
   border-radius: 8px;
 }
 
-li:hover {
-  background: #dadbf9;
-}
 
 a {
   font-weight: 800;
