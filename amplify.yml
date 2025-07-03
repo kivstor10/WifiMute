@@ -4,7 +4,8 @@ frontend:
     preBuild:
       commands:
         - npm install -g @aws-amplify/cli
-        - amplify pull --yes --appId $AMPLIFY_APP_ID --envName $AMPLIFY_BRANCH
+        # Set the AWS_REGION for the amplify pull command directly in the shell
+        - export AWS_REGION=eu-west-2 && amplify pull --yes --appId $AMPLIFY_APP_ID --envName $AMPLIFY_BRANCH
         - npm ci
     build:
       commands:
