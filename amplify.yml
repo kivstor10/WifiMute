@@ -57,6 +57,8 @@ backend:
         - echo "Amplify backend CLI installed in backend install phase (potentially with --force)."
         - echo "--- END OF BACKEND INSTALL PHASE COMMANDS ---"
     build:
+      runtime-versions:
+        nodejs: 22
       commands:
         - npm ci --cache .npm --prefer-offline
         #- npm install
@@ -65,6 +67,8 @@ backend:
 frontend:
   phases:
     build:
+      runtime-versions:
+        nodejs: 22
       commands:
         - echo "--- BEGINNING OF FRONTEND BUILD PHASE COMMANDS ---"
         - echo "Node.js version at beginning of frontend build phase:"
