@@ -28,7 +28,7 @@ backend:
           echo "NVM sourced."
 
         - nvm install 22 || echo "nvm install 22 command failed, check nvm setup. Continuing anyway..."
-        - nvm use 22 || echo "nvm use 22 command failed, check nvm setup. Continuing || echo "nvm use 22 command failed, check nvm setup. Continuing anyway..."
+        - nvm use 22 || echo "nvm use 22 command failed, check nvm setup. Continuing anyway..."
         - node -v
         - npm -v
         - echo "Node.js version check complete in backend install phase."
@@ -40,8 +40,9 @@ backend:
         - npm cache clean --force
         - echo "npm cache cleaned."
 
-        - echo "Attempting to find Node 18 NVM path..."
-        - OLD_NODE_BIN_ROOT=$(find /root/.nvm/versions/node/v18.* -maxdepth 0 -type d 2>/dev/null) # This line is often problematic for YAML, but should be fine unquoted if it's a direct assignment.
+        # Re-attempting the problematic find command line using single quotes for the string
+        # This forces the *entire string* to be treated as a literal.
+        - 'OLD_NODE_BIN_ROOT=$(find /root/.nvm/versions/node/v18.* -maxdepth 0 -type d 2>/dev/null)'
         - echo "Detected OLD_NODE_BIN_ROOT: '$OLD_NODE_BIN_ROOT'"
 
         - AMPLIFY_OLD_BIN="${OLD_NODE_BIN_ROOT}/bin/amplify"
