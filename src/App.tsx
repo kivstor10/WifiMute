@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Schema } from "../amplify/data/resource";
-import { generateClient } from "aws-amplify/data";
+import { generateClient } from "@aws-amplify/data";
 import Navbar from "./Navbar";
 import DeviceFormDialog from "./DeviceFormDialog";
 import ConfirmDialog from "./ConfirmDialog";
