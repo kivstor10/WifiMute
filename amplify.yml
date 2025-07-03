@@ -1,89 +1,18 @@
 version: 1
-
-backend:
-  phases:
-    install:
-      runtime-versions:
-        nodejs: 22
-      commands:
-        - echo "--- BEGINNING OF BACKEND INSTALL PHASE COMMANDS ---"
-        - echo "Initial node version check (before any NVM):"
-        - node -v
-        - which node
-        - rm -rf .npm
-        - rm -rf node_modules
-        - echo "Cleaned up .npm and node_modules for backend install."
-        - |
-          if [ -s "$NVM_DIR/nvm.sh" ]; then
-            . "$NVM_DIR/nvm.sh"
-          elif [ -s "/usr/local/nvm/nvm.sh" ]; then
-            . "/usr/local/nvm/nvm.sh"
-          fi
-          echo "NVM sourced."
-        - nvm install 22 || echo "nvm install 22 command failed, check nvm setup. Continuing anyway..."
-        - nvm use 22 || echo "nvm use 22 command failed, check nvm setup. Continuing anyway..."
-        - node -v
-        - npm -v
-        - echo "Node.js version check complete in backend install phase."
-        - export PATH="$(nvm_current)/bin:$PATH"
-        - echo "PATH after NVM: $PATH"
-        - which node
-        - npm cache clean --force
-        - echo "npm cache cleaned."
-        - |
-            OLD_NODE_BIN_ROOT=$(find /root/.nvm/versions/node/v18.* -maxdepth 0 -type d 2>/dev/null)
-            echo "Detected OLD_NODE_BIN_ROOT: '$OLD_NODE_BIN_ROOT'"
-            AMPLIFY_OLD_BIN="${OLD_NODE_BIN_ROOT}/bin/amplify"
-            echo "Full path to check for old Amplify CLI binary: '$AMPLIFY_OLD_BIN'"
-            if [ -d "$OLD_NODE_BIN_ROOT/bin" ]; then
-              echo "Node 18 bin directory exists: $OLD_NODE_BIN_ROOT/bin"
-              if [ -f "$AMPLIFY_OLD_BIN" ]; then
-                echo "OLD_AMPLIFY_BIN detected. Attempting to remove: '$AMPLIFY_OLD_BIN'"
-                rm -f "$AMPLIFY_OLD_BIN"
-                REMOVE_STATUS=$?
-                echo "rm -f command exit status: $REMOVE_STATUS"
-                if [ $REMOVE_STATUS -eq 0 ]; then
-                  echo "Successfully removed old Amplify CLI binary."
-                else
-                  echo "Failed to remove old Amplify CLI binary (exit status: $REMOVE_STATUS)."
-                fi
-              else
-                echo "Old Amplify CLI binary NOT found at '$AMPLIFY_OLD_BIN'."
-              fi
-            else
-              echo "Node 18 NVM root directory or its 'bin' sub-directory not found. Skipping old Amplify CLI removal."
-            fi
-        - npm install -g @aws-amplify/backend-cli@latest --force
-        - echo "Amplify backend CLI installed in backend install phase (potentially with --force)."
-        - echo "--- END OF BACKEND INSTALL PHASE COMMANDS ---"
-    build:
-      runtime-versions:
-        nodejs: 22
-      commands:
-        - npm ci --cache .npm --prefer-offline
-        #- npm install
-        #- ./node_modules/.bin/ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
-
 frontend:
   phases:
-    build:
-      runtime-versions:
-        nodejs: 22
+    preBuild:
       commands:
-        - echo "--- BEGINNING OF FRONTEND BUILD PHASE COMMANDS ---"
-        - echo "Node.js version at beginning of frontend build phase:"
-        - node -v
-        - which node
-        - npm ci --cache .npm --prefer-offline
-        - echo "Frontend npm ci completed within build phase."
+        - npm install -g @aws-amplify/cli
+        - amplify pull --yes --appId $AMPLIFY_APP_ID --envName $AMPLIFY_BRANCH
+        - npm ci
+    build:
+      commands:
         - npm run build
-        - echo "Frontend build command executed."
-        - echo "--- END OF FRONTEND BUILD PHASE COMMANDS ---"
   artifacts:
     baseDirectory: dist
     files:
       - '**/*'
   cache:
     paths:
-      - .npm/**/*
       - node_modules/**/*
