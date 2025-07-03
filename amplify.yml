@@ -58,11 +58,9 @@ backend:
         - echo "--- END OF BACKEND INSTALL PHASE COMMANDS ---"
     build:
       commands:
-        - echo "Node.js version at beginning of backend build phase (critical check):"
-        - node -v
-        - which node
-        - "$(nvm_current)/bin/npx" ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
-        - echo "Amplify backend deployment command executed."
+        - npm ci --cache .npm --prefer-offline
+        #- npm install
+        - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
 
 frontend:
   phases:
