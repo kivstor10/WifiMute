@@ -3,18 +3,16 @@ frontend:
   phases:
     preBuild:
       commands:
-        # Clean up node_modules and lock files completely
+        # Ensure a clean install and correct package versions
         - rm -rf node_modules
-        - rm -f package-lock.json yarn.lock # Remove both, just in case
-        # Force a full, fresh install, ensuring optional dependencies are included
-        - npm install --unsafe-perm=true # --unsafe-perm can sometimes help with native module builds in CI
-        # After a fresh install, then try updating specific Amplify packages to latest
-        # (Though, npm install --unsafe-perm=true should pull latests based on package.json already)
-        # - npm install @aws-amplify/backend@latest @aws-amplify/backend-data@latest @aws-amplify/backend-cli@latest # Keep this if you want to be extra sure on Amplify specific packages
+        - rm -f package-lock.json yarn.lock
+        - npm install --unsafe-perm=true
+        # (Optional: keep these lines if you want to be extra sure about specific @aws-amplify packages)
+        # - npm install @aws-amplify/backend@latest @aws-amplify/backend-data@latest @aws-amplify/backend-cli@latest
     build:
       commands:
-        # Your backend deployment command
-        - npx @aws-amplify/backend-cli pipeline-deploy --branch $AMPLIFY_BRANCH --app-id $AMPLIFY_APP_ID
+        # THIS IS THE LINE TO CHANGE:
+        - npx ampx pipeline-deploy --branch $AMPLIFY_BRANCH --app-id $AMPLIFY_APP_ID
         # If you have a frontend build command, it would go here (e.g., npm run build)
     postBuild:
       commands:
@@ -22,4 +20,4 @@ frontend:
   artifacts:
     baseDirectory: . # Or your frontend build output directory (e.g., build, dist)
     files:
-      - '**/*' # Include all files if your build generates them in root
+      - '**/*'
