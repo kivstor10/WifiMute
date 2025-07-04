@@ -94,3 +94,5 @@ export default function ScheduleDialog({
     </Dialog>
   );
 }
+
+// No changes needed in ScheduleDialog for the subscription fix. The real change is in App.tsx: switch from observeQuery to list for device fetching.

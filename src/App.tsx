@@ -28,14 +28,7 @@ function App() {
   const [deviceToSchedule, setDeviceToSchedule] = useState<Schema["Device"]["type"] | null>(null);
 
   useEffect(() => {
-    // Correctly subscribe to observeQuery to get initial data and live updates
-    const sub = client.models.Device.observeQuery().subscribe({
-      next: (data) => setDevices([...data.items]),
-      error: (error) => console.error("Error observing devices:", error),
-    });
-
-    // Clean up subscription on component unmount
-    return () => sub.unsubscribe();
+    client.models.Device.list().then((result) => setDevices(result.data));
   }, []);
 
   function handleAddDevice(data: {
