@@ -13,12 +13,18 @@ const schema = a.schema({
       scheduleTo: a.integer(),
     })
     .authorization((allow) => [
-      // CORRECTED: Use ownerDefinedIn as per your TypeScript error
+      // Using ownerDefinedIn as your compiler indicated is correct for your version
       allow.ownerDefinedIn("owner").to(["read", "create", "update", "delete"]),
-      // Allow all authenticated users to read AND SUBSCRIBE to all device changes
-      allow.authenticated().to(["read"]).subscriptions(["onUpdate", "onCreate", "onDelete"]),
-      // If you needed public read *and* subscription (for unauthenticated users), you'd add:
-      // allow.public().to(["read"]).subscriptions(["onUpdate", "onCreate", "onDelete"]),
+
+      // REMOVED: .subscriptions() call, as it's not supported in your current backend library version
+      allow.authenticated().to(["read"]),
+
+      // If you needed public read *and* subscription with an older version,
+      // it might require a different, more global configuration or not be directly supported
+      // for subscriptions on a per-model basis.
+      // E.g., if you had 'allow.public().to(["read"])' then subscriptions might implicitly work if
+      // your AppSync API is configured to allow public subscriptions for read, but that's
+      // highly dependent on the exact Amplify CLI/backend version.
     ]),
 });
 
@@ -27,13 +33,14 @@ export type Schema = ClientSchema<typeof schema>;
 export const data = defineData({
   schema,
   authorizationModes: {
-    defaultAuthorizationMode: "apiKey", // API Key used for public rules (if any)
+    defaultAuthorizationMode: "apiKey",
     apiKeyAuthorizationMode: {
       expiresInDays: 30,
     },
-    // If you are using Cognito User Pools for authentication (which is typical for `allow.authenticated`),
-    // you MUST ensure userPools is configured here.
-    // Example (uncomment and configure if applicable, if you ran `npx amplify add auth` it might be auto-generated):
-    // userPools: true, // or specificUserPoolId: 'your_user_pool_id'
+    // IMPORTANT: If you are using `allow.authenticated()`, you must have Amplify Auth configured
+    // and a user logged in. If you've run `npx amplify add auth`, it will usually
+    // automatically configure this. Otherwise, you might need to uncomment and
+    // configure `userPools: true,` or similar here.
+    // userPools: true,
   },
 });
