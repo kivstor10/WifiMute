@@ -13,14 +13,11 @@ const schema = a.schema({
       scheduleTo: a.integer(),
     })
     .authorization((allow) => [
-      // Owner can do everything, including subscribing to their own updates
+      // CORRECTED: Use ownerDefinedIn as per your TypeScript error
       allow.ownerDefinedIn("owner").to(["read", "create", "update", "delete"]),
-      // Allow all authenticated users to read and SUBSCRIBE to all device changes
-      // Include subscription operations directly if supported
-      allow.authenticated().to(["read"]),
-      // If your library supports subscriptions, you can add:
-      // .subscriptions(["onUpdate", "onCreate", "onDelete"]),
-      // If you needed public read *and* subscription, you'd add:
+      // Allow all authenticated users to read AND SUBSCRIBE to all device changes
+      allow.authenticated().to(["read"]).subscriptions(["onUpdate", "onCreate", "onDelete"]),
+      // If you needed public read *and* subscription (for unauthenticated users), you'd add:
       // allow.public().to(["read"]).subscriptions(["onUpdate", "onCreate", "onDelete"]),
     ]),
 });
@@ -34,9 +31,9 @@ export const data = defineData({
     apiKeyAuthorizationMode: {
       expiresInDays: 30,
     },
+    // If you are using Cognito User Pools for authentication (which is typical for `allow.authenticated`),
+    // you MUST ensure userPools is configured here.
+    // Example (uncomment and configure if applicable, if you ran `npx amplify add auth` it might be auto-generated):
+    // userPools: true, // or specificUserPoolId: 'your_user_pool_id'
   },
-  // If you are using Cognito User Pools for authentication, ensure it's listed here
-  // userPools: {
-  //   // You'd typically connect your Cognito User Pool here
-  // },
 });

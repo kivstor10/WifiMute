@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@aws-amplify/backend-cli": "^1.8.0",
+    "@aws-amplify/backend-data": "^1.6.1",
     "@aws-amplify/ui-react": "^6.5.5",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
@@ -21,6 +23,7 @@
   },
   "devDependencies": {
     "@aws-amplify/backend": "^1.16.1",
+    "@types/lodash": "^4.17.20",
     "@types/react": "^18.2.66",
     "@types/react-dom": "^18.2.22",
     "@typescript-eslint/eslint-plugin": "^7.2.0",
