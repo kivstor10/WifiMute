@@ -3,22 +3,23 @@ frontend:
   phases:
     preBuild:
       commands:
-        # Install frontend dependencies
-        - npm ci
-        # Install the Amplify Gen 2 backend CLI package locally within the build environment.
-        - npm install @aws-amplify/backend-cli
+        # Clean up node_modules and lock files completely
+        - rm -rf node_modules
+        - rm -f package-lock.json yarn.lock # Remove both, just in case
+        # Force a full, fresh install, ensuring optional dependencies are included
+        - npm install --unsafe-perm=true # --unsafe-perm can sometimes help with native module builds in CI
+        # After a fresh install, then try updating specific Amplify packages to latest
+        # (Though, npm install --unsafe-perm=true should pull latests based on package.json already)
+        # - npm install @aws-amplify/backend@latest @aws-amplify/backend-data@latest @aws-amplify/backend-cli@latest # Keep this if you want to be extra sure on Amplify specific packages
     build:
       commands:
-        # Deploy the Amplify Gen 2 backend using the correct pipeline deploy command.
-        # Pass the required --branch and --app-id arguments from environment variables.
+        # Your backend deployment command
         - npx @aws-amplify/backend-cli pipeline-deploy --branch $AMPLIFY_BRANCH --app-id $AMPLIFY_APP_ID
-        # Build your frontend application.
-        - npm run build
+        # If you have a frontend build command, it would go here (e.g., npm run build)
+    postBuild:
+      commands:
+        # Any post-build steps
   artifacts:
-    # Adjust 'baseDirectory' based on your frontend framework:
-    baseDirectory: dist # <--- **ADJUST THIS BASED ON YOUR FRONTEND FRAMEWORK**
+    baseDirectory: . # Or your frontend build output directory (e.g., build, dist)
     files:
-      - '**/*'
-  cache:
-    paths:
-      - node_modules/**/*
+      - '**/*' # Include all files if your build generates them in root
