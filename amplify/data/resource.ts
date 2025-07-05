@@ -13,18 +13,16 @@ const schema = a.schema({
       scheduleTo: a.integer(),
     })
     .authorization((allow) => [
-      // Using ownerDefinedIn as your compiler indicated is correct for your version
+      // Allows the owner of the record to perform all operations
       allow.ownerDefinedIn("owner").to(["read", "create", "update", "delete"]),
 
-      // REMOVED: .subscriptions() call, as it's not supported in your current backend library version
+      // Allows any authenticated user to read devices
       allow.authenticated().to(["read"]),
 
-      // If you needed public read *and* subscription with an older version,
-      // it might require a different, more global configuration or not be directly supported
-      // for subscriptions on a per-model basis.
-      // E.g., if you had 'allow.public().to(["read"])' then subscriptions might implicitly work if
-      // your AppSync API is configured to allow public subscriptions for read, but that's
-      // highly dependent on the exact Amplify CLI/backend version.
+      // TEMPORARY FOR DEBUGGING: Allows unauthenticated (guest) read access using the API Key.
+      // This is an alternative to 'a.allow.public()' for older versions of @aws-amplify/backend.
+      // REMEMBER TO REMOVE THIS LINE AND RUN 'amplify sandbox'/'amplify deploy' AFTER DEBUGGING.
+      allow.guest().to(["read"]), // Changed from .public() to .guest()
     ]),
 });
 
@@ -37,10 +35,5 @@ export const data = defineData({
     apiKeyAuthorizationMode: {
       expiresInDays: 30,
     },
-    // IMPORTANT: If you are using `allow.authenticated()`, you must have Amplify Auth configured
-    // and a user logged in. If you've run `npx amplify add auth`, it will usually
-    // automatically configure this. Otherwise, you might need to uncomment and
-    // configure `userPools: true,` or similar here.
-    // userPools: true,
   },
 });
