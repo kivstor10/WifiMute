@@ -1,21 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 body {
   margin: 0;
-  margin-top: 60px;
   background: white;
-  display: flex;
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  height: 100vh;
-  width: 100vw;
-  justify-content: center;
-  /* align-items: center; */
-  padding: 20px;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  padding: 0; /* Let layout containers control spacing to avoid global compression */
+}
+
+/* App container: center content but avoid forcing all pages into a flex layout
+   which can compress fixed/absolute overlays like the PinLock component. */
+#root {
+  display: block;
+  margin: 0 auto;
+  padding: 0;
 }
 
 main {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
+  display: block;
   max-width: 500px;
+  margin: 0 auto;
   min-width: 320px;
 }
 
@@ -39,15 +47,18 @@ button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
+/* Make navbar fixed at the top so it is flush with the viewport edge */
 nav{
-  position: absolute;
+  position: fixed;
   top: 0;
-  width: max-content;
-  display: flex;
   left: 0;
   right: 0;
-  width: 100vw;
-  flex-direction: row;  
+  display: flex;
+  width: 100%;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 10;
 }
 
 
