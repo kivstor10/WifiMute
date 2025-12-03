@@ -11,20 +11,16 @@ import ScheduleDialog from "./ScheduleDialog";
 import PinLock from "./components/PinLock";
 import usePinAuth from "./hooks/usePinAuth";
 import Button from "@mui/material/Button";
-import IconButton from "@mui/material/IconButton";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
-import Menu from "@mui/material/Menu";
-import MenuItem from "@mui/material/MenuItem";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 
 // Removed all GraphQL query strings
 
-// Define props for App component (only signOut)
+// Define props for App component
 interface AppProps {
-  signOut?: () => void; // signOut function from Authenticator context
+  // No props currently needed
 }
 
-function App({ signOut }: AppProps) {
+function App({}: AppProps) {
   // Removed all device-related state variables
   // const [devices, setDevices] = useState<Array<Schema["Device"]["type"]>>([]);
   const [dialogOpen, setDialogOpen] = useState(false); // Keeping for the + new device button
@@ -39,7 +35,7 @@ function App({ signOut }: AppProps) {
   const { user, authStatus } = useAuthenticator((context) => [context.user, context.authStatus]);
   const isAuthenticated = authStatus === 'authenticated';
 
-  const { isLocked, attemptUnlock, lockApp } = usePinAuth();
+  const { isLocked, attemptUnlock } = usePinAuth();
 
   // local UI states to manage lock overlay visibility and transition animations
   const [lockVisible, setLockVisible] = useState<boolean>(isLocked);

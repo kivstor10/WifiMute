@@ -32,7 +32,7 @@ export const data = defineData({
 		defaultAuthorizationMode: "apiKey", 
 		
 		apiKeyAuthorizationMode: { 
-			expiresInDays: 182, // Set to max (365) to prevent future expiration issues
+			expiresInDays: 182, // Set to half of max (365) to prevent future expiration issues
 		}, 
 	},
 });
