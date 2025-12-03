@@ -1,16 +1,10 @@
 // App.tsx
-import { useEffect, useState } from "react"; // Keep useState for dialogs if you re-introduce them
-// Removed Schema import as it's not directly used for data operations anymore
+import { useEffect, useState } from "react";
 import { useAuthenticator } from '@aws-amplify/ui-react';
 
-// Material-UI Imports - KEEPING THESE
 import Navbar from "./Navbar";
-import DeviceFormDialog from "./DeviceFormDialog";
-import ConfirmDialog from "./ConfirmDialog";
-import ScheduleDialog from "./ScheduleDialog";
 import PinLock from "./components/PinLock";
 import usePinAuth from "./hooks/usePinAuth";
-import Button from "@mui/material/Button";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 
 // Removed all GraphQL query strings
@@ -21,16 +15,9 @@ interface AppProps {
 }
 
 function App({}: AppProps) {
-  // Removed all device-related state variables
-  // const [devices, setDevices] = useState<Array<Schema["Device"]["type"]>>([]);
-  const [dialogOpen, setDialogOpen] = useState(false); // Keeping for the + new device button
-  // Removed menu, confirm, schedule related states and functions for now
-  // const [menuAnchorEls, setMenuAnchorEls] = useState<{ [id: string]: HTMLElement | null; }>({});
-  // const [confirmOpen, setConfirmOpen] = useState(false);
-  // const [deviceToDelete, setDeviceToDelete] = useState<Schema["Device"]["type"] | null>(null);
-  // const [scheduleOpen, setScheduleOpen] = useState(false);
-  // const [deviceToSchedule, setDeviceToSchedule] = useState<Schema["Device"]["type"] | null>(null);
-
+  // State for the two main controls
+  const [blocksEnabled, setBlocksEnabled] = useState(false);
+  const [scheduleEnabled, setScheduleEnabled] = useState(false);
 
   const { user, authStatus } = useAuthenticator((context) => [context.user, context.authStatus]);
   const isAuthenticated = authStatus === 'authenticated';
@@ -108,12 +95,18 @@ function App({}: AppProps) {
     }
   }, [authStatus, user]); // Log whenever auth status or user changes
 
-  // Removed all data fetching/mutation functions (fetchDevices, handleAddDevice, toggleBlockStatus, etc.)
-  // Keeping placeholder for setDialogOpen to allow the button to function, but it won't do anything else.
-  function handleAddDevicePlaceholder() {
-    setDialogOpen(true);
-    console.log("Add Device button clicked.");
-  }
+  // Toggle handlers
+  const handleToggleBlocks = () => {
+    setBlocksEnabled(prev => !prev);
+    console.log('Blocks toggled:', !blocksEnabled);
+    // TODO: Integrate with your backend API to actually toggle blocks
+  };
+
+  const handleToggleSchedule = () => {
+    setScheduleEnabled(prev => !prev);
+    console.log('Schedule toggled:', !scheduleEnabled);
+    // TODO: Integrate with your backend API to actually toggle schedule
+  };
 
 
   return (
@@ -123,53 +116,36 @@ function App({}: AppProps) {
         {/* Main application content is only rendered when unlocked */}
         {!isLocked && (
           <main className="min-h-screen bg-gray-50 w-full pt-16">
-            <div className="max-w-md mx-auto p-4">
-              <h1 className="text-2xl font-semibold mb-4">Device List</h1>
+            <div className="controls-container">
+              <h1 className="controls-title">WiFi Controls</h1>
+              
+              <div className="control-buttons">
+                {/* Toggle Blocks Button */}
+                <button
+                  onClick={handleToggleBlocks}
+                  className={`control-btn ${blocksEnabled ? 'control-btn-active' : 'control-btn-inactive'}`}
+                  disabled={!isAuthenticated}
+                >
+                  <span className="control-btn-icon">{blocksEnabled ? '🚫' : '✓'}</span>
+                  <span className="control-btn-label">Block All</span>
+                  <span className="control-btn-status">{blocksEnabled ? 'ON' : 'OFF'}</span>
+                </button>
 
-              <Button
-                onClick={handleAddDevicePlaceholder}
-                variant="contained"
-                style={{ marginTop: 16 }}
-                disabled={!isAuthenticated}
-              >
-                + new device
-              </Button>
-
-              <div className="mt-6">
-                <div className="bg-white rounded-xl shadow-lg p-4 mb-4">
-                  <h2 className="font-medium">Device Controls</h2>
-                  <p className="text-sm text-gray-500">Placeholder device card — integrate your controls here.</p>
-                  <div className="mt-3 flex gap-3">
-                    <button className="px-3 py-1 rounded-lg bg-green-500 text-white">On</button>
-                    <button className="px-3 py-1 rounded-lg bg-gray-200 text-gray-700">Off</button>
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-xl shadow-lg p-4">
-                  <h3 className="font-medium">More Controls</h3>
-                  <p className="text-sm text-gray-500">Add more device cards as needed.</p>
-                </div>
+                {/* Toggle Schedule Button */}
+                <button
+                  onClick={handleToggleSchedule}
+                  className={`control-btn ${scheduleEnabled ? 'control-btn-active' : 'control-btn-inactive'}`}
+                  disabled={!isAuthenticated}
+                >
+                  <span className="control-btn-icon">⏰</span>
+                  <span className="control-btn-label">Schedule</span>
+                  <span className="control-btn-status">{scheduleEnabled ? 'ON' : 'OFF'}</span>
+                </button>
               </div>
 
-              <DeviceFormDialog
-                open={dialogOpen}
-                onClose={() => setDialogOpen(false)}
-                onSubmit={() => console.log("Device form submitted")}
-              />
-              <ConfirmDialog
-                open={false}
-                onClose={() => {}}
-                onConfirm={() => {}}
-                title="Delete Device"
-                content=""
-              />
-              <ScheduleDialog
-                open={false}
-                onClose={() => {}}
-                onSubmit={async (_range: [number, number]) => {}}
-                deviceToSchedule={null}
-                deviceName={undefined}
-              />
+              {!isAuthenticated && (
+                <p className="auth-warning">Please sign in to use controls</p>
+              )}
             </div>
           </main>
         )}
@@ -179,8 +155,7 @@ function App({}: AppProps) {
         */}
         {lockVisible && (
           <div
-            className={`fixed inset-0 z-50 pointer-events-auto transition-all duration-300 ease-out transform ${animatingOut ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100vw', height: '100vh' }}
+            className={`pin-lock-overlay fixed inset-0 z-50 pointer-events-auto transition-all duration-300 ease-out transform ${animatingOut ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}
             aria-hidden={!isLocked}
           >
             {/* Render PinLock. PinLock itself uses a centered panel; wrapper provides animation and prevents overflow. */}

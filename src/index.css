@@ -42,6 +42,12 @@ main {
   margin: 0 auto;
   min-width: 320px;
 }
+main > div {
+  margin-top: 15%;
+  margin-left: 5%!important;
+  margin-right: 5%!important;
+  text-align: center;
+}
 
 #root > main > button {
   border-radius: 8px;
@@ -64,7 +70,7 @@ button:focus-visible {
 }
 
 /* Make navbar fixed at the top so it is flush with the viewport edge */
-nav{
+nav {
   position: fixed;
   top: 0;
   left: 0;
@@ -75,6 +81,25 @@ nav{
   align-items: center;
   justify-content: space-between;
   z-index: 10;
+  padding: 1rem;
+  background: #f5f5f5;
+}
+
+.navbar-title {
+  font-weight: bold;
+}
+
+.btn-sign-out {
+  padding: 0.5rem 1rem;
+  background: #e53e3e;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-sign-out:hover {
+  background: #c53030;
 }
 
 
@@ -103,4 +128,105 @@ main > ul > li {
 a {
   font-weight: 800;
   text-decoration: none;
+}
+
+/* PIN Lock overlay wrapper */
+.pin-lock-overlay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100vw;
+  height: 100vh;
+}
+
+/* Button with top margin */
+.btn-new-device {
+  margin-top: 16px;
+}
+
+/* Controls page styles */
+.controls-container {
+  padding: 2rem 1rem;
+  text-align: center;
+}
+
+.controls-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 2rem;
+}
+
+.control-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 320px;
+  margin: 0 auto;
+}
+
+.control-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem 2rem;
+  border-radius: 1rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  min-height: 140px;
+}
+
+.control-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.control-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.control-btn-inactive {
+  background: #ffffff;
+  color: #374151;
+}
+
+.control-btn-inactive:hover:not(:disabled) {
+  background: #f9fafb;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+.control-btn-active {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+}
+
+.control-btn-active:hover:not(:disabled) {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.3);
+}
+
+.control-btn-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.control-btn-label {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.control-btn-status {
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-top: 0.25rem;
+  opacity: 0.8;
+}
+
+.auth-warning {
+  margin-top: 1.5rem;
+  color: #9ca3af;
+  font-size: 0.875rem;
 }
