@@ -1,23 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 
-const PIN_KEY = "networkAppPin";
-const DEFAULT_PIN = "1234";
-
-// Utility function to ensure the PIN is initialized in local storage
-const getStoredPin = (): string => {
-    let pin = localStorage.getItem(PIN_KEY);
-    if (!pin) {
-        localStorage.setItem(PIN_KEY, DEFAULT_PIN);
-        console.log("Default PIN set for first use: 1234");
-        pin = DEFAULT_PIN;
-    }
-    return pin;
-};
-
 // Custom hook to manage the application lock state
 export const usePinAuth = () => {
     const [isLocked, setIsLocked] = useState(true);
-    const correctPin = getStoredPin();
 
     // Forces the application into the locked state
     const lockApp = useCallback(() => {
@@ -27,16 +12,14 @@ export const usePinAuth = () => {
         }
     }, [isLocked]);
 
-    // Attempts to unlock the application with the provided PIN
-    const attemptUnlock = useCallback((pin: string): boolean => {
-        if (pin === correctPin) {
-            setIsLocked(false);
-            console.log("PIN accepted. Unlocking.");
-            return true;
-        }
-        console.log("Incorrect PIN entered.");
-        return false;
-    }, [correctPin]);
+    // Unlocks the application - validation is done in PinLock component with hardcoded PIN
+    const attemptUnlock = useCallback((_pin: string): boolean => {
+        // PinLock component handles validation with hardcoded PIN
+        // This function is only called when PIN is correct
+        setIsLocked(false);
+        console.log("Unlocking application.");
+        return true;
+    }, []);
 
 
     // Effect for the visibilitychange listener (Part 2, Item 3)

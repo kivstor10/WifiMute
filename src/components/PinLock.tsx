@@ -6,12 +6,15 @@ interface PinLockProps {
 }
 
 const PIN_LENGTH = 4;
+// Hardcoded PIN - simple deterrent, not intended for security against tech-savvy users
+const HARDCODED_PIN = '1972';
 
 // Keypad Button Component with mobile-optimized styling and inline fallbacks
 const KeypadButton: React.FC<{ value: string | number, onClick: (value: string) => void, isUtility?: boolean }> = ({ value, onClick, isUtility = false }) => {
     const displayValue = value.toString();
     const isBackspace = displayValue === 'backspace';
     const isClear = displayValue === 'clear';
+    const [isPressed, setIsPressed] = useState(false);
 
     // Inline style fallbacks ensure the keypad is usable even if Tailwind isn't applied
     const heightPx = 56; // mobile-friendly button height
@@ -22,32 +25,45 @@ const KeypadButton: React.FC<{ value: string | number, onClick: (value: string) 
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        transition: 'transform 100ms',
+        transition: 'transform 150ms ease-out, background-color 150ms ease-out',
         touchAction: 'manipulation',
         WebkitTapHighlightColor: 'transparent',
+        transform: isPressed ? 'scale(0.92)' : 'scale(1)',
+        border: 'none',
+        outline: 'none',
+        cursor: 'pointer',
     };
 
     const numberStyle: React.CSSProperties = {
-        backgroundColor: '#1f2937', // gray-800
+        backgroundColor: isPressed ? '#374151' : '#1f2937', // gray-700 when pressed, gray-800 normal
         color: '#fff',
         fontSize: 20,
         fontWeight: 600,
-        border: 'none',
     };
 
     const utilStyle: React.CSSProperties = {
         backgroundColor: 'transparent',
-        color: '#9CA3AF', // gray-400
+        color: isPressed ? '#D1D5DB' : '#9CA3AF', // gray-300 when pressed, gray-400 normal
         fontSize: 14,
         fontWeight: 500,
-        border: 'none',
     };
 
     const style = Object.assign({}, baseStyle, isUtility ? utilStyle : numberStyle);
 
+    const handleMouseDown = () => setIsPressed(true);
+    const handleMouseUp = () => {
+        setIsPressed(false);
+        onClick(displayValue);
+    };
+    const handleMouseLeave = () => setIsPressed(false);
+
     return (
         <button
-            onClick={() => onClick(displayValue)}
+            onMouseDown={handleMouseDown}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseLeave}
+            onTouchStart={handleMouseDown}
+            onTouchEnd={handleMouseUp}
             style={style}
         >
             {isBackspace ? (
@@ -91,11 +107,15 @@ const PinLock: React.FC<PinLockProps> = ({ onPinAttempt }) => {
     // Effect to check PIN when length is met
     useEffect(() => {
         if (currentPin.length === PIN_LENGTH) {
-            const success = onPinAttempt(currentPin);
+            // Check against hardcoded PIN directly
+            const success = currentPin === HARDCODED_PIN;
             
             if (success) {
+                console.log('PIN correct, unlocking...');
+                onPinAttempt(currentPin); // Only call callback on success to trigger unlock
                 setCurrentPin('');
             } else {
+                console.log('PIN incorrect');
                 setError(true);
                 // Vibrate for haptic feedback on failure
                 if (navigator.vibrate) {
@@ -126,15 +146,32 @@ const PinLock: React.FC<PinLockProps> = ({ onPinAttempt }) => {
     };
 
     return (
-        // Overlay content rendered inside a fixed wrapper (wrapper provides fixed positioning and animation)
-        <div className="relative w-full h-full flex items-center justify-center">
-                {/* background overlay */}
-                <div className="absolute inset-0 bg-gray-900 bg-opacity-95" />
+        // Full-screen lock screen overlay with gray-800 background to match buttons
+        <div style={{
+            position: 'relative',
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: '#1f2937', // gray-800 - matches button background
+        }}>
+                {/* No separate background overlay needed - parent has solid navy background */}
 
-                <div className="relative w-full max-w-md mx-auto flex flex-col items-center gap-4 px-4 py-6">
+                <div style={{
+                    position: 'relative',
+                    width: '100%',
+                    maxWidth: '28rem',
+                    margin: '0 auto',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '1rem',
+                    padding: '1.5rem 1rem',
+                }}>
                     <div className="text-center px-2">
-                        <h2 className="text-2xl sm:text-3xl font-extrabold text-white mb-1">Access Locked</h2>
-                        <p className="text-gray-400 text-sm sm:text-base">Enter PIN to unlock network controls.</p>
+                        <h2 className="text-2xl sm:text-3xl font-extrabold mb-1" style={{ color: '#ffffff' }}>Access Locked</h2>
+                        <p className="text-gray-400 text-sm sm:text-base" style={{ color: '#ffffff' }}>Enter PIN to unlock network controls.</p>
                     </div>
 
                     {/* PIN Display Dots container */}
@@ -156,7 +193,7 @@ const PinLock: React.FC<PinLockProps> = ({ onPinAttempt }) => {
                     </div>
 
                     {/* Error Message */}
-                    <p className={`text-red-400 text-sm mt-4 transition-opacity duration-300 ${error ? 'opacity-100' : 'opacity-0'}`}>
+                    <p className={`text-red-400 text-sm mt-4 transition-opacity duration-300 ${error ? 'opacity-100' : 'opacity-0'}`} style={{ color: '#f87171' }}>
                         Incorrect PIN. Please try again.
                     </p>
                 </div>

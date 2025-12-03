@@ -152,7 +152,7 @@ function App({}: AppProps) {
         {lockVisible && (
           <div
             className={`fixed inset-0 z-50 pointer-events-auto transition-all duration-300 ease-out transform ${animatingOut ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100vw', height: '100vh' }}
             aria-hidden={!isLocked}
           >
             {/* Render PinLock. PinLock itself uses a centered panel; wrapper provides animation and prevents overflow. */}
