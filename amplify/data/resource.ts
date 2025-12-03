@@ -19,10 +19,8 @@ const schema = a.schema({
 			// Allows any authenticated user to read devices
 			allow.authenticated().to(["read"]),
 
-			// TEMPORARY FOR DEBUGGING: Allows unauthenticated (guest) read access using the API Key.
-			// This is an alternative to 'a.allow.public()' for older versions of @aws-amplify/backend.
-			// REMEMBER TO REMOVE THIS LINE AND RUN 'amplify sandbox'/'amplify deploy' AFTER DEBUGGING.
-			allow.guest().to(["read"]), // Changed from .public() to .guest()
+			// RESTORED: This line requires an API Key to be present for guest/public reads.
+			allow.guest().to(["read"]), 
 		]),
 });
 
@@ -31,12 +29,10 @@ export type Schema = ClientSchema<typeof schema>;
 export const data = defineData({
 	schema,
 	authorizationModes: {
-		// TEMPORARY: Change the default auth mode to a Cognito-based one (e.g., userPool)
-		// This prevents CloudFormation from trying to update the missing API Key resource.
-		defaultAuthorizationMode: "userPool",
-		// defaultAuthorizationMode: "apiKey", // <-- TEMPORARILY REMOVED FOR CLEANUP PUSH
-		// apiKeyAuthorizationMode: { // <-- TEMPORARILY REMOVED FOR CLEANUP PUSH
-		//   expiresInDays: 30, // <-- TEMPORARILY REMOVED FOR CLEANUP PUSH
-		// }, // <-- TEMPORARILY REMOVED FOR CLEANUP PUSH
+		defaultAuthorizationMode: "apiKey", 
+		
+		apiKeyAuthorizationMode: { 
+			expiresInDays: 182, // Set to max (365) to prevent future expiration issues
+		}, 
 	},
 });
