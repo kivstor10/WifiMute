@@ -53,6 +53,34 @@ function App({}: AppProps) {
     return;
   }, [lockVisible]);
 
+  // Toggle body background color based on lock state
+  useEffect(() => {
+    // Get or create the theme-color meta tag
+    let metaThemeColor = document.querySelector('meta[name="theme-color"]') as HTMLMetaElement | null;
+    if (!metaThemeColor) {
+      metaThemeColor = document.createElement('meta');
+      metaThemeColor.name = 'theme-color';
+      document.head.appendChild(metaThemeColor);
+    }
+
+    if (isLocked) {
+      document.body.classList.remove('unlocked');
+      document.documentElement.style.background = '#1f2937';
+      metaThemeColor.content = '#1f2937';
+    } else {
+      document.body.classList.add('unlocked');
+      document.documentElement.style.background = '#f5f5f5';
+      metaThemeColor.content = '#f5f5f5';
+    }
+
+    // Cleanup: ensure unlocked state on unmount
+    return () => {
+      document.body.classList.add('unlocked');
+      document.documentElement.style.background = '#f5f5f5';
+      if (metaThemeColor) metaThemeColor.content = '#f5f5f5';
+    };
+  }, [isLocked]);
+
   // Watch the hook's isLocked to trigger mount/unmount + transition of the overlay
   useEffect(() => {
     if (isLocked) {

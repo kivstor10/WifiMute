@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 
 // Define the expected props for this component
 interface PinLockProps {
@@ -9,12 +9,17 @@ const PIN_LENGTH = 4;
 // Hardcoded PIN - simple deterrent, not intended for security against tech-savvy users
 const HARDCODED_PIN = '1972';
 
+// Debounce delay in milliseconds
+const DEBOUNCE_MS = 150;
+
 // Keypad Button Component with mobile-optimized styling and inline fallbacks
 const KeypadButton: React.FC<{ value: string | number, onClick: (value: string) => void, isUtility?: boolean }> = ({ value, onClick, isUtility = false }) => {
     const displayValue = value.toString();
     const isBackspace = displayValue === 'backspace';
     const isClear = displayValue === 'clear';
     const [isPressed, setIsPressed] = useState(false);
+    const lastClickTime = useRef(0);
+    const isTouchDevice = useRef(false);
 
     // Inline style fallbacks ensure the keypad is usable even if Tailwind isn't applied
     const heightPx = 56; // mobile-friendly button height
@@ -32,6 +37,7 @@ const KeypadButton: React.FC<{ value: string | number, onClick: (value: string) 
         border: 'none',
         outline: 'none',
         cursor: 'pointer',
+        userSelect: 'none',
     };
 
     const numberStyle: React.CSSProperties = {
@@ -50,20 +56,56 @@ const KeypadButton: React.FC<{ value: string | number, onClick: (value: string) 
 
     const style = Object.assign({}, baseStyle, isUtility ? utilStyle : numberStyle);
 
-    const handleMouseDown = () => setIsPressed(true);
-    const handleMouseUp = () => {
-        setIsPressed(false);
+    // Debounced click handler to prevent double-taps
+    const handleClick = useCallback(() => {
+        const now = Date.now();
+        if (now - lastClickTime.current < DEBOUNCE_MS) {
+            return; // Ignore if within debounce window
+        }
+        lastClickTime.current = now;
         onClick(displayValue);
+    }, [onClick, displayValue]);
+
+    // Touch handlers - mark as touch device and handle press
+    const handleTouchStart = (e: React.TouchEvent) => {
+        e.preventDefault(); // Prevent mouse events from firing
+        isTouchDevice.current = true;
+        setIsPressed(true);
     };
-    const handleMouseLeave = () => setIsPressed(false);
+
+    const handleTouchEnd = (e: React.TouchEvent) => {
+        e.preventDefault();
+        setIsPressed(false);
+        handleClick();
+    };
+
+    // Mouse handlers - only work if not a touch device
+    const handleMouseDown = () => {
+        if (!isTouchDevice.current) {
+            setIsPressed(true);
+        }
+    };
+
+    const handleMouseUp = () => {
+        if (!isTouchDevice.current) {
+            setIsPressed(false);
+            handleClick();
+        }
+    };
+
+    const handleMouseLeave = () => {
+        if (!isTouchDevice.current) {
+            setIsPressed(false);
+        }
+    };
 
     return (
         <button
             onMouseDown={handleMouseDown}
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseLeave}
-            onTouchStart={handleMouseDown}
-            onTouchEnd={handleMouseUp}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
             style={style}
         >
             {isBackspace ? (

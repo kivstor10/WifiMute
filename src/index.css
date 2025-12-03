@@ -2,14 +2,30 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
+/* Set html and body to cover full viewport and prevent white gaps on mobile */
+html, body {
   margin: 0;
-  background: white;
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  padding: 0;
   min-height: 100vh;
+  min-height: 100dvh; /* Use dynamic viewport height for mobile */
+  transition: background-color 0.3s ease;
+}
+
+html {
+  /* Default to lock screen color - prevents flash of white on load */
+  background: #1f2937;
+}
+
+body {
+  background: #1f2937; /* gray-800 - matches lock screen */
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  padding: 0; /* Let layout containers control spacing to avoid global compression */
+}
+
+/* When app is unlocked, body gets this class to match navbar */
+body.unlocked {
+  background: #f5f5f5 !important;
 }
 
 /* App container: center content but avoid forcing all pages into a flex layout
