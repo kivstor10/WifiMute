@@ -1,0 +1,5 @@
+# WiFi Blocker Pi Script Dependencies
+# Install with: pip3 install -r requirements.txt
+
+awsiotsdk>=1.0.0
+schedule>=1.0.0
