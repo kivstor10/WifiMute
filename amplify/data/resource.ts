@@ -22,6 +22,17 @@ const schema = a.schema({
 			// RESTORED: This line requires an API Key to be present for guest/public reads.
 			allow.guest().to(["read"]), 
 		]),
+
+	// Global app state - stores block/schedule toggle states
+	AppState: a
+		.model({
+			id: a.id().required(), // Use a fixed ID like "global" for singleton
+			blocksEnabled: a.boolean().default(false),
+			scheduleEnabled: a.boolean().default(false),
+		})
+		.authorization((allow) => [
+			allow.authenticated().to(["read", "create", "update"]),
+		]),
 });
 
 export type Schema = ClientSchema<typeof schema>;

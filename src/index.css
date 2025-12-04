@@ -226,6 +226,13 @@ a {
   opacity: 0.8;
 }
 
+.loading-text {
+  text-align: center;
+  color: #6b7280;
+  font-size: 1rem;
+  padding: 2rem 0;
+}
+
 .auth-warning {
   margin-top: 1.5rem;
   color: #9ca3af;
