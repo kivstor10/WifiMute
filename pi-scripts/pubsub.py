@@ -15,8 +15,27 @@ import os
 import threading
 from datetime import datetime
 
-import schedule
-from awsiot import mqtt_connection_builder, mqtt
+# Force unbuffered output for systemd service logging
+sys.stdout.reconfigure(line_buffering=True)
+sys.stderr.reconfigure(line_buffering=True)
+
+print("pubsub.py starting - importing dependencies...")
+
+try:
+    import schedule
+    print("  - schedule module loaded")
+except ImportError as e:
+    print(f"ERROR: Failed to import schedule: {e}")
+    sys.exit(1)
+
+try:
+    from awsiot import mqtt_connection_builder, mqtt
+    print("  - awsiot module loaded")
+except ImportError as e:
+    print(f"ERROR: Failed to import awsiot: {e}")
+    sys.exit(1)
+
+print("All dependencies loaded successfully.")
 
 # --- Configuration ---
 TARGET_IPS_FILE = "/home/kivstor10/target_ips.txt"  # File containing IPs to block (one per line)
@@ -113,16 +132,36 @@ def is_within_block_period():
     """
     Check if current time is within the blocking period.
     Returns True if we should be blocking right now.
-    """
-    now = datetime.now().strftime("%H:%M")
     
-    # Handle overnight blocking (e.g., 00:00 to 06:00)
-    if TIME_BLOCK > TIME_UNBLOCK:
-        # Blocking period spans midnight
-        return now >= TIME_BLOCK or now < TIME_UNBLOCK
+    For TIME_BLOCK="00:00" and TIME_UNBLOCK="06:00":
+    - Returns True between 00:00 and 05:59
+    - Returns False from 06:00 to 23:59
+    """
+    now = datetime.now()
+    current_hour = now.hour
+    current_minute = now.minute
+    
+    # Parse block/unblock times
+    block_hour, block_minute = map(int, TIME_BLOCK.split(":"))
+    unblock_hour, unblock_minute = map(int, TIME_UNBLOCK.split(":"))
+    
+    # Convert to minutes since midnight for easier comparison
+    current_mins = current_hour * 60 + current_minute
+    block_mins = block_hour * 60 + block_minute
+    unblock_mins = unblock_hour * 60 + unblock_minute
+    
+    # Check if we're in the block period
+    if block_mins < unblock_mins:
+        # Same-day period (e.g., 00:00 to 06:00)
+        in_period = block_mins <= current_mins < unblock_mins
     else:
-        # Normal same-day period
-        return TIME_BLOCK <= now < TIME_UNBLOCK
+        # Overnight period (e.g., 22:00 to 06:00)
+        in_period = current_mins >= block_mins or current_mins < unblock_mins
+    
+    print(f"DEBUG: Time check - Current: {now.strftime('%H:%M')} ({current_mins} mins), "
+          f"Block period: {TIME_BLOCK}-{TIME_UNBLOCK}, In period: {in_period}")
+    
+    return in_period
 
 
 def job_scheduled_block():
@@ -178,6 +217,10 @@ def enable_schedule():
         return
     
     print("🟢 ENABLING scheduled blocking...")
+    print(f"   Block time: {TIME_BLOCK}")
+    print(f"   Unblock time: {TIME_UNBLOCK}")
+    print(f"   Current time: {datetime.now().strftime('%H:%M:%S')}")
+    
     schedule_enabled = True
     
     # Start the scheduler thread
@@ -187,10 +230,10 @@ def enable_schedule():
     
     # Check if we should be blocking right now based on current time
     if is_within_block_period():
-        print("Currently within block period - blocking all devices now.")
+        print("✅ Currently within block period - blocking all devices now.")
         block_all_clients()
     else:
-        print("Not currently in block period - devices remain unblocked until scheduled time.")
+        print("ℹ️ Not currently in block period - devices remain unblocked until scheduled time.")
 
 
 def disable_schedule():

@@ -66,9 +66,10 @@ if ! "$VENV_PYTHON" -c "import schedule" &> /dev/null; then
     "$VENV_PIP" install schedule
 fi
 
-# Run the MODIFIED pub/sub sample application as a listener
-printf "\nRunning modified pub/sub listener application...\n"
-"$VENV_PYTHON" aws-iot-device-sdk-python-v2/samples/pubsub.py \
+# Run the WiFi blocker pub/sub listener application
+# Using PYTHONUNBUFFERED=1 to ensure logs appear immediately when running as a service
+printf "\nRunning WiFi blocker pub/sub listener application...\n"
+PYTHONUNBUFFERED=1 "$VENV_PYTHON" ./pubsub.py \
   --endpoint a2b1ubzmtkza2j-ats.iot.eu-west-2.amazonaws.com \
   --ca_file root-CA.crt \
   --cert PiWiFiBlocker.cert.pem \

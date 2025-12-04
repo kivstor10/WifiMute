@@ -97,8 +97,11 @@ const publishScheduleCommand = async (enable: boolean) => {
         command: enable ? 'schedule_enable' : 'schedule_disable'
     });
 
+    console.log(`📤 Attempting to send schedule command: ${payload}`);
+
     try {
         const iotClient = await getIotClient();
+        console.log('🔌 IoT client created successfully');
 
         const command = new PublishCommand({
             topic: MQTT_TOPIC, 
@@ -106,12 +109,14 @@ const publishScheduleCommand = async (enable: boolean) => {
             qos: 0,
         });
 
-        await iotClient.send(command);
-        console.log(`✅ IoT Schedule Command sent: ${enable ? 'schedule_enable' : 'schedule_disable'}`);
+        const result = await iotClient.send(command);
+        console.log(`✅ IoT Schedule Command sent: ${enable ? 'schedule_enable' : 'schedule_disable'}`, result);
 
-    } catch (error) {
+    } catch (error: any) {
         console.error(`❌ Failed to publish schedule command to IoT Core:`, error);
+        console.error(`❌ Error name: ${error?.name}, message: ${error?.message}`);
         alert("Schedule command failed! Check Pi connectivity or IAM permissions.");
+        throw error; // Re-throw so we can see it
     }
 };
 
